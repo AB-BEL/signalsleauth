@@ -1,0 +1,106 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin Rankings{% endblock %}
+{% block content %}
+<h2>Admin – Rankings</h2>
+<p style="margin:0.5rem 0 0.75rem;">
+  <a href="{{ url_for('admin_rankings.admin_rankings') }}">Live overall</a>
+  {% for ch in chapters %}
+    · <a href="{{ url_for('admin_rankings.admin_rankings', chapter=ch.chapter_num) }}">Ch.{{ ch.chapter_num }}</a>
+  {% endfor %}
+</p>
+<p style="margin-bottom:0.75rem;">
+  <form method="post" action="{{ url_for('admin_rankings.admin_force_snapshot') }}" style="display:inline;">
+    <input type="hidden" name="type" value="weekly">
+    <button class="btn btn-sm" type="submit">Save weekly snapshot now</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_rankings.admin_force_snapshot') }}" style="display:inline;margin-left:0.4rem;">
+    <input type="hidden" name="type" value="final">
+    <button class="btn btn-secondary btn-sm" type="submit">Save FINAL season snapshot</button>
+  </form>
+</p>
+{% if finals %}
+<p><strong>Final:</strong> {% for s in finals %}<a class="badge ok" href="{{ url_for('admin_rankings.admin_rankings', snapshot=s.id) }}">{{ s.week_label }}</a> {% endfor %}</p>
+{% endif %}
+{% if weekly %}
+<p style="font-size:0.88rem;margin-bottom:1rem;"><strong>Weekly:</strong>
+  {% for s in weekly[:15] %}
+    <a class="badge" href="{{ url_for('admin_rankings.admin_rankings', snapshot=s.id) }}">{{ s.week_label }}</a>
+  {% endfor %}
+</p>
+{% endif %}
+{% if season_ended %}
+<div class="flash warning">Season end date has passed.</div>
+{% endif %}
+
+<div class="card">
+  {% if mode == 'snapshot' and board %}
+  <h3>{% if board.snapshot.snapshot_type == 'final' %}FINAL{% else %}Weekly{% endif %} — {{ board.snapshot.week_label }}</h3>
+  <p style="font-size:0.82rem;color:var(--text-dim);">Recorded {{ board.snapshot.created_at|ymdt }}</p>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Name</th><th>Email</th><th>Score</th><th>Passed</th><th>Re-reg</th></tr>
+    </thead>
+    <tbody>
+      {% for r in board.rows %}
+      <tr>
+        <td>#{{ r.rank }}</td>
+        <td>{% if r.generated_username %}{{ r.generated_username }}{% else %}{{ r.student_id }}{% endif %}</td>
+        <td>{{ r.full_name or '—' }}</td>
+        <td>{{ r.email }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+        <td>{{ r.chapters_passed }}</td>
+        <td>{% if r.any_rereg %}Yes{% else %}No{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% elif mode == 'chapter' %}
+  <h3>Chapter {{ chapter }} (live)</h3>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Name</th><th>Email</th><th>Raw</th><th>Effective</th><th>Re-reg</th><th>Passed</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ranks %}
+      <tr>
+        <td>{{ r.rank }}</td>
+        <td>{% if r.generated_username %}{{ r.generated_username }}{% else %}{{ r.student_id }}{% endif %}</td>
+        <td>{{ r.full_name or '—' }}</td>
+        <td>{{ r.email }}</td>
+        <td>{{ r.total_score }}</td>
+        <td>{{ '%.1f'|format(r.effective_score) }}</td>
+        <td>{% if r.is_rereg %}Yes{% else %}No{% endif %}</td>
+        <td>{% if r.passed %}Yes{% else %}No{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--text-dim);">No data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <h3>Live overall (all students)</h3>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Name</th><th>Email</th><th>Weighted final /100</th><th>Raw points sum</th><th>Chapters passed</th><th>Any re-reg</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ranks %}
+      <tr>
+        <td>#{{ r.rank }}</td>
+        <td>{% if r.generated_username %}{{ r.generated_username }}{% else %}{{ r.student_id }}{% endif %}</td>
+        <td>{{ r.full_name or '—' }}</td>
+        <td>{{ r.email }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+        <td>{{ r.raw_total }}</td>
+        <td>{{ r.chapters_passed }}</td>
+        <td>{% if r.any_rereg %}Yes{% else %}No{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--text-dim);">No data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+<a class="btn btn-secondary btn-sm" href="{{ url_for('admin_system.admin_dashboard') }}">← Dashboard</a>
+{% endblock %}

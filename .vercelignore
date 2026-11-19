@@ -1,0 +1,15 @@
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+mobile/node_modules/
+mobile/dist/
+backups/
+tests/
+docs/*.pdf
+*.bat
+pc_server.py
+requirements-pc.txt

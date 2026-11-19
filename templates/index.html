@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ APP_NAME }} – Home{% endblock %}
+{% block content %}
+<div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+  <h1 style="font-size:2rem;color:var(--green);margin-bottom:0.4rem;">{{ APP_NAME }}</h1>
+  <p style="color:var(--text-dim);">{{ COURSE_NAME }} — chapter games as independent HTML (any subject).</p>
+  <p style="color:var(--text-dim);margin-bottom:1rem;">Mysteries of Discrete-Time Signal Processing</p>
+  {% if season and season.name %}
+  <p class="badge">Season: {{ season.name }}
+    {% if season.start_date %} · {{ season.start_date|ymd }} → {{ season.end_date|ymd or '…' }}{% endif %}
+  </p>
+  {% endif %}
+  <p style="max-width:520px;margin:1.2rem auto;color:var(--text-dim);font-size:0.95rem;">
+    Students must be pre-registered by an administrator (Student ID list).
+    Then sign up with that ID, email, and password. Progress starts at Chapter 1, Level 1.
+  </p>
+  <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem;">
+    <a class="btn" href="{{ url_for('auth.login') }}">Student Login</a>
+    <a class="btn btn-secondary" href="{{ url_for('auth.register') }}">Register</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin_auth.admin_login') }}">Admin Login</a>
+  </div>
+</div>
+{% endblock %}

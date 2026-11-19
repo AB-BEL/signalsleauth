@@ -1,0 +1,11 @@
+{% extends "admin_base.html" %}
+{% block title %}Levels{% endblock %}
+{% block content %}
+<h2>Level management</h2>
+<p style="color:var(--dim);">Levels 1–7 per chapter · pass criterion default ≥50% (server-side scoring)</p>
+<div class="card">
+  <p>Sequence is fixed as level_num 1→7. Passing criteria are enforced by the <strong>scoring engine</strong>
+  (question bank + ≥50% clear). Questions are managed under Question management.</p>
+  <a class="btn btn-sm" href="{{ url_for('admin_content.admin_questions') }}">Open question bank</a>
+</div>
+{% endblock %}

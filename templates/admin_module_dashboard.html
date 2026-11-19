@@ -1,0 +1,30 @@
+{% extends "admin_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+<p style="color:var(--dim);font-size:0.9rem;">Platform overview · total students, activity, completions, averages</p>
+<div class="grid-stats">
+  <div class="stat"><b>{{ stats.total_students }}</b><span>Total students</span></div>
+  <div class="stat"><b>{{ stats.active_students_7d }}</b><span>Active (7 days)</span></div>
+  <div class="stat"><b>{{ stats.chapter_completions }}</b><span>Chapter completions</span></div>
+  <div class="stat"><b>{{ stats.average_overall_score }}</b><span>Avg overall score</span></div>
+  <div class="stat"><b>{{ stats.active_chapters }}</b><span>Active chapters</span></div>
+</div>
+<div class="card" style="margin-top:1rem;">
+  <h3>Architecture services</h3>
+  <p style="font-size:0.88rem;color:var(--dim);">
+    Web + mobile → HTTPS API → Auth · Users · Games · Scoring · Progression · Ranking · Feedback · Reporting → MySQL · Object storage
+  </p>
+  <p>
+    <a class="btn btn-sm" href="{{ url_for('admin_students.admin_module_students') }}">Manage students</a>
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('admin_chapters.admin_module_games') }}">Game packages</a>
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('admin_rankings.admin_rankings') }}">Leaderboard</a>
+  </p>
+</div>
+{% if season %}
+<div class="card">
+  <h3>Season</h3>
+  <p>{{ season.name or 'Season' }} · {{ season.start_date }} → {{ season.end_date }}</p>
+</div>
+{% endif %}
+{% endblock %}

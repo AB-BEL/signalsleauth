@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Play Chapter {{ chapter_num }}{% endblock %}
+{% block head %}
+<style>
+  .play-frame-wrap {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0a1612;
+    min-height: 70vh;
+  }
+  .play-frame-wrap iframe {
+    width: 100%;
+    height: 78vh;
+    border: 0;
+    display: block;
+    background: #0d1b16;
+  }
+  .meta-bar {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .rereg-banner {
+    background: rgba(224,122,61,0.15); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 0.55rem 1rem; margin-bottom: 0.75rem; font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="meta-bar">
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('student.dashboard') }}">← Dashboard</a>
+  <h2 style="flex:1;margin:0;font-size:1.2rem;">Chapter {{ chapter_num }} — {{ chapter.title }}</h2>
+  {% if chapter.start_date or chapter.end_date %}
+  <span class="badge">Deadline: {{ chapter.start_date|ymd or '…' }} → {{ chapter.end_date|ymd or '…' }}</span>
+  {% endif %}
+</div>
+{% if is_rereg %}
+<div class="rereg-banner">Re-registration mode: scores count at ×4/5 for rankings.</div>
+{% endif %}
+<div class="play-frame-wrap">
+  <iframe
+    src="{{ url_for('student.serve_game_file', chapter_num=chapter_num) }}"
+    title="Chapter {{ chapter_num }} game"
+    allowfullscreen
+  ></iframe>
+</div>
+<p style="margin-top:0.75rem;font-size:0.82rem;color:var(--text-dim);">
+  This chapter uses the HTML game file uploaded by the administrator.
+  The server injects <code>SignalSleuthGame</code> so level scores are saved to your account (MySQL), not only in the browser.
+  Play inside the frame above. Use the Dashboard link when finished.
+</p>
+{% endblock %}

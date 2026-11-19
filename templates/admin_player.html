@@ -1,0 +1,63 @@
+{% extends "admin_base.html" %}
+{% block title %}Player scores – {{ player.generated_username or player.student_id }}{% endblock %}
+{% block content %}
+<p><a class="btn btn-secondary btn-sm" href="{{ url_for('admin_system.admin_dashboard') }}">← Admin dashboard</a></p>
+<h2>Player scores</h2>
+<div class="card">
+  <p>
+    <strong>{{ player.full_name or '—' }}</strong>
+    · Username: <strong style="color:var(--green)">{{ player.generated_username or '—' }}</strong>
+    · ID: {{ player.student_id }}
+    · {{ player.email }}
+    {% if player.sex %} · {{ player.sex }}{% endif %}
+  </p>
+  <p>
+    Status chapter: {{ player.status_chapter or 1 }}
+    · Weighted final: <strong>{{ '%.2f'|format(final_score) }}</strong> / 100
+    · Live rank: {% if rank %}<strong>#{{ rank }}</strong> / {{ total_players }}{% else %}—{% endif %}
+  </p>
+</div>
+
+{% for block in by_chapter %}
+{% set ch = block.chapter %}
+{% set prog = block.progress %}
+{% set levels = block.levels %}
+<div class="card">
+  <h3>Chapter {{ ch.chapter_num }} — {{ ch.title }}</h3>
+  {% if prog %}
+  <p style="font-size:0.9rem;">
+    Points: <strong>{{ prog.total_score }}</strong> / {{ prog.max_possible }}
+    · Effective: {{ '%.1f'|format(prog.effective_score) }}
+    · {% if prog.passed %}<span class="badge ok">Passed</span>{% else %}<span class="badge off">Not passed</span>{% endif %}
+    {% if prog.is_rereg %}<span class="badge warn">Re-reg</span>{% endif %}
+  </p>
+  {% else %}
+  <p style="color:var(--text-dim);">No scores yet on this chapter.</p>
+  {% endif %}
+  {% if levels %}
+  <table>
+    <thead>
+      <tr><th>Level</th><th>Best</th><th>Max</th><th>%</th><th>Attempts</th><th>Cleared</th><th>Updated</th></tr>
+    </thead>
+    <tbody>
+      {% for lv in levels %}
+      <tr>
+        <td>{{ lv.level_num }}</td>
+        <td><strong>{{ lv.best_score }}</strong></td>
+        <td>{{ lv.max_score }}</td>
+        <td>
+          {% if lv.max_score %}
+            {{ '%.0f'|format(100 * lv.best_score / lv.max_score) }}%
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ lv.attempts }}</td>
+        <td>{% if lv.cleared %}<span class="badge ok">Yes</span>{% else %}<span class="badge off">No</span>{% endif %}</td>
+        <td style="font-size:0.8rem;">{{ lv.updated_at|ymdt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

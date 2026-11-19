@@ -1,0 +1,14 @@
+{% extends "admin_base.html" %}
+{% block title %}Scoring{% endblock %}
+{% block content %}
+<h2>Scoring management</h2>
+<div class="card">
+  <ul style="font-size:0.9rem;">
+    <li>Scores are computed <strong>only on the server</strong> from submitted answers and the question bank.</li>
+    <li>Level clears at overall ≥ {{ pass_percent }}%.</li>
+    <li>Attempts are recorded in <code>level_scores</code> and history table <code>game_attempts</code>.</li>
+    <li>Client-reported score values are rejected without answers.</li>
+    <li>Re-registration keeps full points; admin controls ranking policy.</li>
+  </ul>
+</div>
+{% endblock %}

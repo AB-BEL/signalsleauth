@@ -1,0 +1,16 @@
+{% extends "admin_base.html" %}
+{% block title %}Backup{% endblock %}
+{% block content %}
+<h2>Backup &amp; recovery</h2>
+<div class="card">
+  <h3>Storage</h3>
+  <pre style="font-size:0.8rem;">{{ storage }}</pre>
+  <p style="font-size:0.88rem;color:var(--dim);">Use STORAGE_BACKEND=s3 for persistent game packages. See OPERATIONS.md.</p>
+</div>
+<div class="card">
+  <h3>Database backups</h3>
+  <p style="font-size:0.9rem;">Run on the server:</p>
+  <pre style="font-size:0.8rem;">./scripts/backup_mysql.sh
+./scripts/restore_mysql.sh backups/….sql.gz</pre>
+</div>
+{% endblock %}

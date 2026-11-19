@@ -1,0 +1,3 @@
+# For hosts that run a long-lived process (Render, Railway, a VPS)
+-r requirements.txt
+gunicorn>=22.0.0

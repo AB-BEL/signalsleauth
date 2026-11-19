@@ -1,0 +1,35 @@
+{% extends "admin_base.html" %}
+{% block title %}Games{% endblock %}
+{% block content %}
+<h2>Game management</h2>
+<p style="color:var(--dim);font-size:0.9rem;">Upload, publish, version history · storage: {{ storage.backend }}</p>
+{% for ch in chapters %}
+<div class="card">
+  <h3>Chapter {{ ch.chapter_num }} — {{ ch.title }}</h3>
+  <p style="font-size:0.85rem;">Current file: <strong>{{ ch.game_filename or 'none' }}</strong></p>
+  <form method="post" action="{{ url_for('admin_chapters.admin_upload_game', num=ch.chapter_num) }}" enctype="multipart/form-data">
+    <input type="file" name="game_file" accept=".html,.htm" required />
+    <button class="btn btn-sm" type="submit">Upload / publish</button>
+  </form>
+</div>
+{% endfor %}
+<div class="card">
+  <h3>Version history</h3>
+  <table>
+    <thead><tr><th>When</th><th>Ch</th><th>Version</th><th>File</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for v in versions %}
+      <tr>
+        <td>{{ v.created_at }}</td>
+        <td>{{ v.chapter_num }}</td>
+        <td>{{ v.version_label }}</td>
+        <td>{{ v.filename }}</td>
+        <td>{{ v.status }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">No versions recorded yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

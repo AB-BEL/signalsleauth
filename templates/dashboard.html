@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}{{ user.generated_username or user.student_id }} — My Dashboard{% endblock %}
+{% block content %}
+{% if AD_SLOT_DASHBOARD %}{{ AD_SLOT_DASHBOARD|safe }}{% endif %}
+<div class="card" style="border-color:var(--green);background:linear-gradient(135deg,#152a22,#0d1b16);">
+  <p style="font-size:0.8rem;color:var(--text-dim);margin:0 0 0.35rem;">Your personal account · not shared with other players</p>
+  <h2 style="margin:0 0 0.5rem;">{{ user.full_name or user.generated_username }}</h2>
+  <p style="margin:0;font-size:0.95rem;">
+    Username: <strong style="color:var(--green);font-size:1.15rem;">{{ user.generated_username }}</strong>
+    · Student ID: <strong>{{ user.student_id }}</strong>
+    {% if user.campus_id %} · Campus: {{ user.campus_id }}{% endif %}
+  </p>
+  <p style="margin:0.35rem 0 0;font-size:0.9rem;color:var(--text-dim);">
+    {{ user.email }}{% if user.sex %} · {{ user.sex }}{% endif %}
+    · Working on: <strong style="color:var(--text);">Chapter {{ user.status_chapter or status_ch }}</strong> <span style="font-size:0.8rem;">(advances only after all 7 levels of a chapter are cleared)</span>
+    {% if season.name %} · Season: {{ season.name }}{% endif %}
+    {% if not season_active %}<span class="badge warn">Season closed</span>{% endif %}
+  </p>
+  <p style="margin:0.5rem 0 0;font-size:0.85rem;">
+    Live rank: <strong>{% if current_rank %}#{{ current_rank }}{% else %}—{% endif %}</strong>
+    · Your weighted score: <strong style="color:var(--green);">{{ '%.2f'|format(final_score) }}</strong>/100
+    · Account id #{{ user.id }}
+  </p>
+</div>
+
+
+{% if season_ended and final_board %}
+<div class="card" style="border-color:var(--accent);">
+  <h3>Season finished — final ranking</h3>
+  <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:0.6rem;">
+    Snapshot: {{ final_board.snapshot.week_label }} · {{ final_board.snapshot.created_at|ymdt }}
+  </p>
+  <table>
+    <thead><tr><th>Rank</th><th>Student ID</th><th>Score</th></tr></thead>
+    <tbody>
+      {% for r in final_board.rows[:15] %}
+      <tr {% if r.user_id == user.id %}style="background:rgba(61,155,110,0.15);"{% endif %}>
+        <td>{{ r.rank }}</td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ r.full_name or '—' }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p style="margin-top:0.5rem;"><a href="{{ url_for('student.rankings', snapshot=final_board.snapshot.id) }}">Full final board →</a></p>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Your live rank</h3>
+    <p style="font-size:2rem;font-weight:700;color:var(--accent);margin:0.3rem 0;">
+      {% if current_rank %}#{{ current_rank }}{% else %}—{% endif %}
+      <span style="font-size:1rem;color:var(--text-dim);font-weight:500;">
+        {% if total_players %}/ {{ total_players }} players{% endif %}
+      </span>
+    </p>
+    <p style="font-size:0.85rem;color:var(--text-dim);">
+      Weighted score: <strong style="color:var(--green);">{{ '%.2f'|format(final_score) }}</strong> / 100
+      · Rank refreshes live; weekly history is stored every week.
+    </p>
+  </div>
+  <div class="card">
+    <h3>Your overall (weighted) score</h3>
+    <p style="font-size:2rem;font-weight:700;color:var(--green);margin:0.3rem 0;">
+      {{ '%.2f'|format(final_score) }}
+      <span style="font-size:1rem;color:var(--text-dim);font-weight:500;">/ 100</span>
+    </p>
+    <p style="font-size:0.82rem;color:var(--text-dim);">
+      Final = Σ (chapter % × weight). Full scores always; attempts are counted (no ×4/5).
+    </p>
+  </div>
+  <div class="card">
+    <h3>Weight formula</h3>
+    <p style="font-size:0.8rem;color:var(--text-dim);line-height:1.45;">
+      Ch1×(1/22) + Ch2×(1/11) + Ch3×(1/11) + Ch4×(1/11) + Ch5×(1/11) +
+      Ch6×(1/11) + Ch7×(2/22) + Ch8×(1/11) + Ch9×(1/11) + Ch10×(3/22)
+    </p>
+    <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem;">
+      (Ch10 weight is 3/22 so all weights sum to 1; “3/2” in the request would not normalize.)
+    </p>
+  </div>
+</div>
+
+
+
+<div class="card">
+  <h3>League table (all players — your row is highlighted)</h3>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.6rem;">
+    Student ID only. Ranked by weighted overall score. Your row is highlighted.
+    {% if need_to_pass is not none %}
+    · Points still needed on Ch.{{ status_ch }} to pass (&gt;50%): <strong>{{ need_to_pass }}</strong>
+    {% endif %}
+    {% if proj_rank %}
+    · If you keep this pace: projected rank <strong>#{{ proj_rank }}</strong>
+      (projected score {{ '%.1f'|format(proj_score) }})
+    {% endif %}
+  </p>
+  <div style="max-height:360px;overflow:auto;">
+  <table>
+    <thead>
+      <tr>
+        <th>Pos</th>
+        <th>Username</th>
+        <th>P</th>
+        <th>Score</th>
+        <th>Chapters passed</th>
+        <th>Status ch.</th>
+        <th>Form</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in league %}
+      <tr {% if r.user_id == user.id %}style="background:rgba(61,155,110,0.18);"{% endif %}>
+        <td><strong>{{ r.rank }}</strong></td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ r.chapters_passed }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+        <td>{{ r.chapters_passed }}</td>
+        <td>{{ r.status_chapter or '—' }}</td>
+        <td style="font-size:0.75rem;color:var(--text-dim);">
+          {% if r.any_rereg %}Re-reg{% else %}Normal{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="color:var(--text-dim);">No players yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Your weekly rank history</h3>
+  {% if rank_history %}
+  <table>
+    <thead>
+      <tr><th>Week</th><th>Type</th><th>Rank</th><th>Score</th><th>Chapters passed</th><th>Recorded</th></tr>
+    </thead>
+    <tbody>
+      {% for h in rank_history|reverse %}
+      <tr>
+        <td>{{ h.week_label }}</td>
+        <td>{% if h.snapshot_type == 'final' %}<span class="badge ok">Final</span>{% else %}<span class="badge">Weekly</span>{% endif %}</td>
+        <td><strong>#{{ h.rank }}</strong></td>
+        <td>{{ '%.2f'|format(h.overall_score) }}</td>
+        <td>{{ h.chapters_passed }}</td>
+        <td style="font-size:0.8rem;">{{ h.created_at|ymdt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--text-dim);font-size:0.9rem;">No weekly snapshots yet. Rank history appears after the first weekly snapshot (auto on first visit each week).</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>My progress by chapter (this account only)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Title</th>
+        <th>Deadline</th>
+        <th>Points</th>
+        <th>Chapter %</th>
+        <th>Weight</th>
+        <th>Contribution</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ch in chapters %}
+      {% set n = ch.chapter_num %}
+      {% set p = progress[n] %}
+      {% set a = access[n] %}
+      {% set det = weight_detail | selectattr('chapter_num', 'equalto', n) | list %}
+      {% set d = det[0] if det else none %}
+      <tr>
+        <td>{{ n }}</td>
+        <td style="font-size:0.85rem;">{{ ch.title }}</td>
+        <td style="font-size:0.75rem;color:var(--text-dim);">
+          {% if ch.start_date or ch.end_date %}
+            {{ ch.start_date|ymd or '…' }} → {{ ch.end_date|ymd or '…' }}
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if p and p.max_possible %}
+            <strong>{{ p.total_score }}</strong> / {{ p.max_possible }}
+            {% if p.is_rereg %}<br><span class="badge warn">Re-reg (full points; admin ranks)</span>{% endif %}
+          {% else %}
+            <span style="color:var(--text-dim);">0 / —</span>
+          {% endif %}
+        </td>
+        <td>
+          <strong>{{ p.levels_cleared if p and p.levels_cleared else 0 }}</strong> / 7
+        </td>
+        <td>
+          {% if d and d.has_score %}
+            {{ '%.1f'|format(d.raw_percent) }}%
+            {% if p and p.is_rereg %}<br><span style="font-size:0.75rem;">eff {{ '%.1f'|format(d.effective_percent) }}%</span>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td style="font-size:0.8rem;">{{ '%.4f'|format(chapter_weights[n]) }}</td>
+        <td>
+          {% if d %}{{ '%.2f'|format(d.contribution) }}{% else %}0.00{% endif %}
+        </td>
+        <td>
+          {% if ch.is_active %}<span class="badge ok">Active</span>{% else %}<span class="badge off">Off</span>{% endif %}
+          {% if p and p.passed %}<span class="badge ok">Passed</span>{% endif %}
+          {% if not ch.game_filename %}<span class="badge warn">No game</span>{% endif %}
+        </td>
+        <td>
+          {% if a.ok and season_active %}
+            <a class="btn btn-sm" href="{{ url_for('student.play_chapter', chapter_num=n) }}">Play</a>
+          {% else %}
+            <span class="badge off" title="{{ a.reason }}">Locked</span>
+          {% endif %}
+          {% if ch.is_active %}
+          <form method="post" action="{{ url_for('student.request_rereg', chapter_num=n) }}" style="display:inline;">
+            <button class="btn btn-secondary btn-sm" type="submit">Re-reg</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for ch in chapters %}
+{% set n = ch.chapter_num %}
+{% set levels = level_scores[n] %}
+{% set locks = level_locks[n] if level_locks is defined else {} %}
+{% if levels %}
+<div class="card">
+  <h3>Chapter {{ n }} — level detail</h3>
+  <p style="margin-bottom:0.5rem;">
+    <a class="btn btn-sm" href="{{ url_for('student.chapter_feedback_pdf', chapter_num=n) }}">Download all level feedback (PDF)</a>
+  </p>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.5rem;">
+    Pass mark ≥50% overall per level. Retries keep full marks; only the attempt count increases. Chapter is complete when all 7 levels are cleared. Download per-level or full-chapter feedback PDF.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Level</th><th>Best score</th><th>Max</th><th>Attempts</th><th>Cleared</th><th>Status</th><th>Feedback</th></tr>
+    </thead>
+    <tbody>
+      {% for lv in levels %}
+      {% set lk = locks[lv.level_num] if locks else none %}
+      <tr>
+        <td>{{ lv.level_num }}</td>
+        <td><strong>{{ lv.best_score }}</strong></td>
+        <td>{{ lv.max_score }}</td>
+        <td>{{ lv.attempts }}</td>
+        <td>{% if lv.cleared %}<span class="badge ok">Yes</span>{% else %}<span class="badge off">No</span>{% endif %}</td>
+        <td>
+          {% if lk and lk.locked %}
+            <span class="badge off">Locked (no replay)</span>
+          {% else %}
+            <span class="badge ok">Playable</span>
+          {% endif %}
+        </td>
+        <td>
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('student.level_feedback_pdf', chapter_num=n, level_num=lv.level_num) }}">PDF</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endfor %}
+
+<p>
+  <a class="btn btn-secondary" href="{{ url_for('student.rankings') }}">View rankings</a>
+</p>
+{% endblock %}

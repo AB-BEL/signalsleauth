@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Edit question{% endblock %}
+{% block content %}
+<p><a class="btn btn-secondary btn-sm" href="{{ url_for('admin_content.admin_questions', chapter=q.chapter_num) }}">← Question bank</a></p>
+<h2>Edit question — Ch.{{ q.chapter_num }} L{{ q.level_num }} Q{{ q.q_index }}</h2>
+<form method="post" class="card">
+  <label>Level title</label>
+  <input name="level_title" value="{{ q.level_title or '' }}">
+  <label>Question text</label>
+  <textarea name="question_text" rows="3" required>{{ q.question_text }}</textarea>
+  <label>Points</label>
+  <input type="number" name="points" value="{{ q.points }}">
+  <label>Model / exact answer</label>
+  <textarea name="model_answer" rows="4">{{ q.model_answer or '' }}</textarea>
+  <label>Feedback note (grading guidance)</label>
+  <textarea name="feedback_note" rows="3">{{ q.feedback_note or '' }}</textarea>
+  <label>Keys JSON (auto-scoring phrases)</label>
+  <textarea name="keys_json" rows="5">{{ q.keys_json or '[]' }}</textarea>
+  <button class="btn" type="submit">Save</button>
+</form>
+{% endblock %}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>Signal Sleuth game integration</title></head>
+<body>
+<h1>Trusted scoring contract</h1>
+<p>The server ignores client score/cleared. Send answers only:</p>
+<pre>
+await SignalSleuthGame.submitScore({
+  level_num: 1,
+  answers: [
+    { q_index: 1, answer: "student text..." },
+    { q_index: 2, answer: "..." }
+  ]
+});
+// Response includes server-computed score, max_score, cleared, feedback
+</pre>
+</body></html>

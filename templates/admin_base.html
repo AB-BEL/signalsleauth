@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Admin{% endblock %} · Signal Sleuth</title>
+  <style>
+    :root {
+      --bg:#0b1410; --card:#12201a; --border:#2a4a3a; --text:#e8f0ec;
+      --dim:#8aa89a; --green:#3d9b6e; --accent:#e07a3d;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar {
+      width: 240px; background:#0d1a14; border-right:1px solid var(--border);
+      padding: 1rem 0.75rem; flex-shrink:0;
+    }
+    .sidebar h1 { font-size:1rem; margin:0 0 0.25rem; color:var(--green); }
+    .sidebar .sub { font-size:0.75rem; color:var(--dim); margin-bottom:1rem; }
+    .nav a {
+      display:block; padding:0.45rem 0.6rem; border-radius:6px; color:var(--text);
+      font-size:0.88rem; margin-bottom:2px;
+    }
+    .nav a:hover, .nav a.active { background:rgba(61,155,110,0.18); text-decoration:none; }
+    .nav .sec { font-size:0.7rem; text-transform:uppercase; color:var(--dim); margin:0.75rem 0.4rem 0.25rem; letter-spacing:0.04em; }
+    .main { flex:1; padding:1.25rem 1.5rem; max-width:1100px; }
+    .card {
+      background:var(--card); border:1px solid var(--border); border-radius:10px;
+      padding:1rem 1.15rem; margin-bottom:1rem;
+    }
+    .grid-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:0.75rem; }
+    .stat { background:#0d1b16; border:1px solid var(--border); border-radius:8px; padding:0.75rem; }
+    .stat b { display:block; font-size:1.4rem; color:var(--green); }
+    .stat span { font-size:0.78rem; color:var(--dim); }
+    table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+    th, td { text-align:left; padding:0.45rem 0.4rem; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:var(--dim); font-weight:600; }
+    .btn {
+      display:inline-block; background:var(--green); color:#04140c; border:none;
+      padding:0.4rem 0.75rem; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem;
+    }
+    .btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .btn-sm { padding:0.25rem 0.5rem; font-size:0.8rem; }
+    .badge { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.75rem; background:#1a3328; }
+    .flash { padding:0.6rem 0.8rem; border-radius:6px; margin-bottom:0.75rem; font-size:0.9rem; }
+    .flash.success { background:rgba(61,155,110,0.2); }
+    .flash.danger { background:rgba(180,60,60,0.25); }
+    .flash.warning { background:rgba(224,122,61,0.2); }
+    label { display:block; font-size:0.8rem; color:var(--dim); margin-top:0.5rem; }
+    input, select, textarea {
+      width:100%; max-width:480px; padding:0.4rem 0.5rem; border-radius:6px;
+      border:1px solid var(--border); background:#0a1612; color:var(--text);
+    }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+    @media (max-width:800px) {
+      .layout { flex-direction:column; }
+      .sidebar { width:100%; }
+      .grid-2 { grid-template-columns:1fr; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <h1>Signal Sleuth</h1>
+    <div class="sub">Admin · architecture v2</div>
+    <nav class="nav">
+      <div class="sec">Overview</div>
+      <a href="{{ url_for('admin_system.admin_dashboard') }}" class="{% if module=='dashboard' %}active{% endif %}">Dashboard</a>
+      <div class="sec">People</div>
+      <a href="{{ url_for('admin_students.admin_module_students') }}" class="{% if module=='students' %}active{% endif %}">Student management</a>
+      <div class="sec">Content</div>
+      <a href="{{ url_for('admin_chapters.admin_module_chapters') }}" class="{% if module=='chapters' %}active{% endif %}">Chapter management</a>
+      <a href="{{ url_for('admin_chapters.admin_module_games') }}" class="{% if module=='games' %}active{% endif %}">Game management</a>
+      <a href="{{ url_for('admin_chapters.admin_module_levels') }}" class="{% if module=='levels' %}active{% endif %}">Level management</a>
+      <a href="{{ url_for('admin_content.admin_questions') }}" class="{% if module=='questions' %}active{% endif %}">Question management</a>
+      <div class="sec">Assessment</div>
+      <a href="{{ url_for('admin_rankings.admin_module_scoring') }}" class="{% if module=='scoring' %}active{% endif %}">Scoring management</a>
+      <a href="{{ url_for('admin_content.admin_feedback_list') }}" class="{% if module=='feedback' %}active{% endif %}">Feedback management</a>
+      <a href="{{ url_for('admin_rankings.admin_rankings') }}" class="{% if module=='leaderboard' %}active{% endif %}">Leaderboard</a>
+      <a href="{{ url_for('admin_rankings.admin_module_reports') }}" class="{% if module=='reports' %}active{% endif %}">Reports</a>
+      <div class="sec">System</div>
+      <a href="{{ url_for('admin_system.admin_module_settings') }}" class="{% if module=='settings' %}active{% endif %}">System settings</a>
+      <a href="{{ url_for('admin_system.admin_module_security') }}" class="{% if module=='security' %}active{% endif %}">Security</a>
+      <a href="{{ url_for('admin_system.admin_module_backup') }}" class="{% if module=='backup' %}active{% endif %}">Backup &amp; recovery</a>
+      <div class="sec">Account</div>
+      <a href="{{ url_for('admin_auth.admin_change_password') }}">Change password</a>
+      <a href="{{ url_for('admin_auth.admin_logout') }}">Logout</a>
+    </nav>
+  </aside>
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

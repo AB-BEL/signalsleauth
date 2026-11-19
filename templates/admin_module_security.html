@@ -1,0 +1,26 @@
+{% extends "admin_base.html" %}
+{% block title %}Security{% endblock %}
+{% block content %}
+<h2>Security</h2>
+<div class="card">
+  <p><a class="btn btn-sm" href="{{ url_for('admin_auth.admin_change_password') }}">Change admin password</a></p>
+</div>
+<div class="card">
+  <h3>Administrator activity log</h3>
+  <table>
+    <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for row in activity %}
+      <tr>
+        <td>{{ row.created_at }}</td>
+        <td>{{ row.admin_id }}</td>
+        <td>{{ row.action }}</td>
+        <td style="font-size:0.8rem;">{{ row.detail }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">No activity yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

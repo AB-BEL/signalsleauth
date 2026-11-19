@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Rankings{% endblock %}
+{% block content %}
+<h2>Rankings</h2>
+<p style="margin:0.5rem 0 0.75rem;font-size:0.9rem;">
+  <a href="{{ url_for('student.rankings') }}">Live overall</a>
+  {% for ch in chapters %}
+    · <a href="{{ url_for('student.rankings', chapter=ch.chapter_num) }}">Ch.{{ ch.chapter_num }}</a>
+  {% endfor %}
+</p>
+{% if finals %}
+<p style="margin-bottom:0.5rem;">
+  <strong>Final season:</strong>
+  {% for s in finals %}
+    <a class="badge ok" href="{{ url_for('student.rankings', snapshot=s.id) }}">{{ s.week_label }}</a>
+  {% endfor %}
+</p>
+{% endif %}
+{% if weekly %}
+<p style="margin-bottom:1rem;font-size:0.88rem;">
+  <strong>Weekly boards:</strong>
+  {% for s in weekly[:12] %}
+    <a class="badge" href="{{ url_for('student.rankings', snapshot=s.id) }}">{{ s.week_label }}</a>
+  {% endfor %}
+</p>
+{% endif %}
+
+{% if season_ended %}
+<div class="flash warning">The season has ended. Final ranking is frozen when the first end-of-season snapshot is taken.</div>
+{% endif %}
+
+<div class="card">
+  {% if mode == 'snapshot' and board %}
+  <h3>
+    {% if board.snapshot.snapshot_type == 'final' %}Final season ranking{% else %}Weekly ranking{% endif %}
+    — {{ board.snapshot.week_label }}
+  </h3>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.75rem;">
+    Players are shown by Student ID only. Recorded {{ board.snapshot.created_at|ymdt }}
+  </p>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Weighted score</th><th>Chapters passed</th></tr>
+    </thead>
+    <tbody>
+      {% for r in board.rows %}
+      <tr {% if r.user_id == my_id %}style="background:rgba(61,155,110,0.15);"{% endif %}>
+        <td><strong>#{{ r.rank }}</strong></td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+        <td>{{ r.chapters_passed }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="color:var(--text-dim);">Empty snapshot.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% elif mode == 'chapter' %}
+  <h3>Chapter {{ chapter }} (live)</h3>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.75rem;">
+    Student ID only. Effective points (re-reg rules apply).
+  </p>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Score</th><th>Effective</th><th>Passed</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ranks %}
+      <tr {% if r.user_id == my_id %}style="background:rgba(61,155,110,0.15);"{% endif %}>
+        <td>{{ r.rank }}</td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ r.total_score }}</td>
+        <td>{{ '%.1f'|format(r.effective_score) }}</td>
+        <td>{% if r.passed %}Yes{% else %}No{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:var(--text-dim);">No scores yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <h3>Live overall ranking</h3>
+  <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.75rem;">
+    Student ID only · weighted final (0–100) · level-wise scores (CxLy:score/max, attempts)
+  </p>
+  <table>
+    <thead>
+      <tr><th>Rank</th><th>Student ID</th><th>Weighted /100</th><th>Level scores</th><th>Chapters passed</th></tr>
+    </thead>
+    <tbody>
+      {% for r in ranks %}
+      <tr {% if r.user_id == my_id %}style="background:rgba(61,155,110,0.15);"{% endif %}>
+        <td><strong>#{{ r.rank }}</strong></td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ '%.2f'|format(r.overall_score) }}</td>
+        <td style="font-size:0.75rem;max-width:280px;">{{ r.level_scores_text or '—' }}</td>
+        <td>{{ r.chapters_passed }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:var(--text-dim);">No scores yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+# Free web service — YOU can Suspend/Delete this service anytime in the Render dashboard.
+# Content: independent HTML chapter games (any course). Prefer STORAGE_BACKEND=s3 on free disks.
+services:
+  - type: web
+    name: signalsleuth
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: gunicorn -b 0.0.0.0:$PORT app:app --workers 2 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_NAME
+        value: Signal Sleuth
+      - key: COURSE_NAME
+        value: Your course
+      - key: ADS_ENABLED
+        value: "0"
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: "3306"
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_SSL
+        value: "0"
+      - key: MYSQL_DATABASE
+        value: signalsleuth
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false

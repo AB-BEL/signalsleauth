@@ -1,0 +1,51 @@
+{% extends "admin_base.html" %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<h2>Student management</h2>
+<p style="color:var(--dim);font-size:0.9rem;">Register eligibility, import, edit access, suspend, delete</p>
+<div class="card">
+  <h3>Import pre-IDs (Excel)</h3>
+  <form method="post" action="{{ url_for('admin_students.admin_upload_ids') }}" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".xlsx,.xls,.csv" required />
+    <button class="btn btn-sm" type="submit">Upload</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_students.admin_seed_default_ids') }}" style="margin-top:0.5rem;">
+    <button class="btn btn-sm btn-secondary" type="submit">Import seed ID list</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Add eligible ID</h3>
+  <form method="post" action="{{ url_for('admin_students.admin_add_pre_user') }}" class="grid-2">
+    <div><label>Student ID</label><input name="student_id" required /></div>
+    <div><label>Name</label><input name="name" /><label>Sex</label><input name="sex" />
+      <button class="btn btn-sm" type="submit">Add</button></div>
+  </form>
+</div>
+<div class="card">
+  <h3>Registered players ({{ users|length }})</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Email</th><th>Ch</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.student_id }}</td>
+        <td>{{ u.generated_username }}</td>
+        <td>{{ u.full_name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.status_chapter }}</td>
+        <td>{{ '%.1f'|format(u.overall_points or 0) }}</td>
+        <td>
+          <a class="btn btn-sm btn-secondary" href="{{ url_for('admin_students.admin_player_scores', user_id=u.id) }}">View</a>
+          <form method="post" action="{{ url_for('admin_students.admin_user_suspend', user_id=u.id) }}" style="display:inline;">
+            <button class="btn btn-sm btn-secondary" type="submit">Suspend</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_students.admin_delete_user', user_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Delete?');">
+            <button class="btn btn-sm" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

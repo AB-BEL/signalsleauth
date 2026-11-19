@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Course chapter game (independent HTML)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 1.5rem auto; padding: 0 1rem; }
+    textarea { width: 100%; min-height: 80px; }
+    .ok { color: #1a7a4c; }
+  </style>
+</head>
+<body>
+  <h1>Independent chapter game</h1>
+  <p>Design this file for <strong>any course</strong>. The platform injects
+    <code>SignalSleuthGame</code> when the admin uploads it. Score only via the API.</p>
+  <p>Chapter: <span id="ch">—</span> · User: <span id="uid">—</span></p>
+  <label>Sample question — explain a concept from your course materials</label>
+  <textarea id="a1" placeholder="Student answer…"></textarea>
+  <p><button type="button" id="go">Submit to server</button></p>
+  <pre id="out"></pre>
+  <script>
+    document.getElementById("ch").textContent = window.SS_CHAPTER_NUM || "?";
+    document.getElementById("uid").textContent = window.SS_USER_ID || "?";
+    document.getElementById("go").onclick = async function () {
+      const out = document.getElementById("out");
+      if (!window.SignalSleuthGame) {
+        out.textContent = "Bridge not injected — upload via Admin → Game management.";
+        return;
+      }
+      try {
+        const data = await SignalSleuthGame.submitScore({
+          level_num: 1,
+          answers: [{ q_index: 1, answer: document.getElementById("a1").value || "" }]
+        });
+        out.textContent = JSON.stringify(data, null, 2);
+        out.className = "ok";
+      } catch (e) {
+        out.textContent = String(e.message || e);
+      }
+    };
+  </script>
+</body>
+</html>

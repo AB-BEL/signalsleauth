@@ -1,0 +1,28 @@
+{% extends "admin_base.html" %}
+{% block title %}Chapters{% endblock %}
+{% block content %}
+<h2>Chapter management</h2>
+<div class="card">
+  <h3>Reset chapter name</h3>
+  <form method="post" action="{{ url_for('admin_chapters.admin_set_chapter_title') }}" class="grid-2">
+    <div><label>Chapter (1–10)</label><input type="number" name="chapter_num" min="1" max="10" required /></div>
+    <div><label>Title</label><input name="title" required /><button class="btn btn-sm" type="submit">Save</button></div>
+  </form>
+</div>
+{% for ch in chapters %}
+<div class="card">
+  <h3>Chapter {{ ch.chapter_num }} — {{ ch.title }}
+    {% if ch.is_active %}<span class="badge">Active</span>{% else %}<span class="badge">Off</span>{% endif %}
+  </h3>
+  <p style="font-size:0.85rem;color:var(--dim);">Game: {{ ch.game_filename or '—' }} · Deadline: {{ ch.start_date }} → {{ ch.end_date }}</p>
+  <form method="post" action="{{ url_for('admin_chapters.admin_toggle_chapter', num=ch.chapter_num) }}" style="display:inline;">
+    <button class="btn btn-sm" type="submit">{% if ch.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_chapters.admin_chapter_deadline', num=ch.chapter_num) }}" style="display:inline;">
+    <input type="date" name="start_date" value="{{ ch.start_date or '' }}" />
+    <input type="date" name="end_date" value="{{ ch.end_date or '' }}" />
+    <button class="btn btn-sm btn-secondary" type="submit">Set deadline</button>
+  </form>
+</div>
+{% endfor %}
+{% endblock %}

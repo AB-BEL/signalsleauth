@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit student feedback{% endblock %}
+{% block content %}
+<p>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_content.admin_feedback_list') }}">← All feedback</a>
+  <a class="btn btn-sm" href="{{ url_for('admin_content.admin_questions', chapter=chapter_num) }}">Question bank Ch.{{ chapter_num }}</a>
+</p>
+<h2>Edit feedback — {{ player.generated_username or player.student_id }}</h2>
+<p style="color:var(--text-dim);font-size:0.9rem;">
+  {{ player.full_name }} · {{ player.email }} · Chapter {{ chapter_num }} Level {{ level_num }}
+  · Score {{ row.best_score }}/{{ row.max_score }} · Attempts {{ row.attempts }}
+</p>
+
+{% if bank %}
+<div class="card">
+  <h3>Model answers (question bank)</h3>
+  {% for q in bank %}
+  <p style="font-size:0.88rem;margin-bottom:0.6rem;">
+    <strong>Q{{ q.q_index }}.</strong> {{ q.question_text }}
+    <br><span style="color:var(--green);">Exact/model: {{ q.model_answer }}</span>
+    {% if q.feedback_note %}<br><span style="color:var(--text-dim);">Note: {{ q.feedback_note }}</span>{% endif %}
+  </p>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" class="card">
+  <h3>Student Q&amp;A feedback (editable)</h3>
+  <p style="font-size:0.85rem;color:var(--text-dim);">Changes appear on the student’s feedback PDF.</p>
+  {% if feedback %}
+  <input type="hidden" name="item_count" value="{{ feedback|length }}">
+  {% for item in feedback %}
+  <div style="border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+    <label>Question {{ loop.index }}</label>
+    <textarea name="q_{{ loop.index0 }}" rows="2">{{ item.question or item.q or '' }}</textarea>
+    <label>Student answer</label>
+    <textarea name="a_{{ loop.index0 }}" rows="3">{{ item.answer or item.a or item.student_answer or item.text or '' }}</textarea>
+    <div class="grid-2">
+      <div>
+        <label>Score</label>
+        <input name="s_{{ loop.index0 }}" value="{{ item.score if item.score is defined else '' }}">
+      </div>
+      <div>
+        <label>Max</label>
+        <input name="m_{{ loop.index0 }}" value="{{ item.max if item.max is defined else '' }}">
+      </div>
+    </div>
+    <label>Feedback (editable)</label>
+    <textarea name="f_{{ loop.index0 }}" rows="2">{{ item.feedback or item.note or item.correct or '' }}</textarea>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:var(--text-dim);">No structured feedback yet. Paste JSON below or wait for a student submit with feedback.</p>
+  <label>Raw feedback JSON</label>
+  <textarea name="feedback_json" rows="10">{{ row.feedback_json or '[]' }}</textarea>
+  {% endif %}
+  <button class="btn" type="submit">Save feedback</button>
+</form>
+{% endblock %}

@@ -1,0 +1,3 @@
+# For running Signal Sleuth as a PC / LAN server (Windows, macOS or Linux)
+-r requirements.txt
+waitress>=3.0.0

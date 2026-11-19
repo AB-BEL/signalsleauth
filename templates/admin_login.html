@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+<div class="card" style="max-width:420px;margin:1rem auto;">
+  <h2>Admin Login</h2>
+  <form method="post">
+    <label>Username</label>
+    <input type="text" name="username" required autocomplete="username">
+    <label>Password</label>
+    <input type="password" name="password" required autocomplete="current-password">
+    <button class="btn" type="submit">Log in as Admin</button>
+  </form>
+  <p style="margin-top:0.8rem;font-size:0.8rem;color:var(--text-dim);">Default: admin / admin123 — change after first login.</p>
+</div>
+{% endblock %}

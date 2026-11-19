@@ -1,0 +1,81 @@
+{% extends "admin_base.html" %}
+{% block title %}Question bank – Admin{% endblock %}
+{% block content %}
+<p>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_system.admin_dashboard') }}">← Dashboard</a>
+  <a class="btn btn-sm" href="{{ url_for('admin_content.admin_feedback_list') }}">Student answer feedback</a>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_content.admin_questions_download', chapter=filter_chapter) }}">Download CSV</a>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_content.admin_questions_download_pdf', chapter=filter_chapter) }}">Download PDF (Q&amp;A)</a>
+  <form method="post" action="{{ url_for('admin_content.admin_questions_reseed') }}" style="display:inline;">
+    <button class="btn btn-sm" type="submit">Load all 7 Ch.1 levels</button>
+  </form>
+</p>
+<h2>Question bank — all levels</h2>
+<p style="color:var(--text-dim);font-size:0.9rem;">
+  View exact questions, model (exact) answers, and feedback notes. Edit any item.
+  Chapter 1 is pre-seeded from the book game; add more for other chapters as needed.
+</p>
+<p style="margin-bottom:1rem;">
+  Filter:
+  <a href="{{ url_for('admin_content.admin_questions') }}">All</a>
+  {% for ch in chapters %}
+    · <a href="{{ url_for('admin_content.admin_questions', chapter=ch.chapter_num) }}">Ch.{{ ch.chapter_num }}</a>
+  {% endfor %}
+</p>
+
+{% for key, block in grouped.items() %}
+<div class="card">
+  <h3>Chapter {{ key[0] }} · Level {{ key[1] }} — {{ block.title }}</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Question</th><th>Pts</th><th>Model / exact answer</th><th>Feedback note</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for q in block.questions %}
+      <tr>
+        <td>{{ q.q_index }}</td>
+        <td style="font-size:0.88rem;max-width:220px;">{{ q.question_text }}</td>
+        <td>{{ q.points }}</td>
+        <td style="font-size:0.85rem;max-width:280px;color:var(--green);">{{ q.model_answer }}</td>
+        <td style="font-size:0.82rem;color:var(--text-dim);max-width:180px;">{{ q.feedback_note or '—' }}</td>
+        <td><a class="btn btn-sm" href="{{ url_for('admin_content.admin_question_edit', qid=q.id) }}">Edit</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><p>No questions yet. Seed runs on first open; check MySQL connection.</p></div>
+{% endfor %}
+
+<div class="card">
+  <h3>Add question</h3>
+  <form method="post" action="{{ url_for('admin_content.admin_question_add') }}">
+    <div class="grid-2">
+      <div>
+        <label>Chapter</label>
+        <input type="number" name="chapter_num" value="1" min="1" max="10" required>
+        <label>Level</label>
+        <input type="number" name="level_num" value="1" min="1" max="7" required>
+        <label>Question index</label>
+        <input type="number" name="q_index" value="1" min="1" required>
+        <label>Level title</label>
+        <input name="level_title" placeholder="Optional level name">
+      </div>
+      <div>
+        <label>Points</label>
+        <input type="number" name="points" value="10">
+        <label>Question text</label>
+        <textarea name="question_text" rows="2" required></textarea>
+        <label>Model / exact answer</label>
+        <textarea name="model_answer" rows="2"></textarea>
+        <label>Feedback note (shown to admin / grading guidance)</label>
+        <textarea name="feedback_note" rows="2"></textarea>
+      </div>
+    </div>
+    <label>Keys JSON (optional scoring phrases)</label>
+    <textarea name="keys_json" rows="2" placeholder='[{"phrases":["keyword"],"weight":5,"label":"idea"}]'>[]</textarea>
+    <button class="btn btn-sm" type="submit">Add to bank</button>
+  </form>
+</div>
+{% endblock %}

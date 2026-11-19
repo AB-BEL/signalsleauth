@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<p style="margin-bottom:1rem;">
+  <a class="btn btn-sm" href="{{ url_for('admin_content.admin_questions') }}">Question bank (all levels)</a>
+  <a class="btn btn-sm" href="{{ url_for('admin_content.admin_feedback_list') }}">Student answers &amp; feedback</a>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_rankings.admin_rankings') }}">Rankings</a>
+</p>
+
+<h2>Admin Dashboard</h2>
+<p style="margin-bottom:1rem;">
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_auth.admin_change_password') }}">Change admin password</a>
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_rankings.admin_rankings') }}">Full rankings</a>
+</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Season / semester</h3>
+    <form method="post" action="{{ url_for('admin_chapters.admin_season') }}">
+      <label>Name</label>
+      <input name="name" value="{{ season.name or '' }}">
+      <label>Start date (YYYY-MM-DD)</label>
+      <input name="start_date" type="date" value="{{ season.start_date|ymd }}">
+      <label>End date (YYYY-MM-DD)</label>
+      <input name="end_date" type="date" value="{{ season.end_date|ymd }}">
+      <button class="btn btn-sm" type="submit">Save season</button>
+    </form>
+  </div>
+
+  <div class="card">
+    
+<div class="card">
+  <h3>Reset chapter name</h3>
+  <p style="font-size:0.85rem;color:var(--text-dim);">Change the display title before uploading a new HTML game file.</p>
+  <form method="post" action="{{ url_for('admin_chapters.admin_set_chapter_title') }}" class="grid-2">
+    <div>
+      <label>Chapter number (1–10)</label>
+      <input type="number" name="chapter_num" min="1" max="10" required>
+    </div>
+    <div>
+      <label>New chapter name / title</label>
+      <input name="title" required placeholder="e.g. Discrete-Time Signals">
+      <button class="btn btn-sm" type="submit">Save chapter name</button>
+    </div>
+  </form>
+</div>
+
+  <h3>Chapters — activate, deadlines &amp; game HTML</h3>
+    <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.75rem;">
+      Reset a chapter <strong>name</strong> before uploading a new HTML game.
+  Uploaded HTML is auto-injected with <code>SignalSleuthGame</code> so scores reach MySQL via
+  <code>/api/submit-score</code>. Games must call <code>SignalSleuthGame.submitScore(...)</code> after each level
+  (see <code>uploads/GAME_INTEGRATION_SNIPPET.html</code>). Upload one HTML game per chapter (same style as Chapter 1). Set start/end dates for each chapter deadline.
+    </p>
+    {% for ch in chapters %}
+    <div style="border:1px solid var(--border);border-radius:8px;padding:0.85rem 1rem;margin-bottom:0.75rem;background:var(--surface2);">
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
+        <strong>Ch.{{ ch.chapter_num }}</strong>
+        <span style="font-size:0.85rem;flex:1;">{{ ch.title }}</span>
+        {% if ch.is_active %}<span class="badge ok">Active</span>{% else %}<span class="badge off">Inactive</span>{% endif %}
+        {% if ch.game_filename %}<span class="badge ok">Game: {{ ch.game_filename }}</span>
+        {% else %}<span class="badge warn">No game file</span>{% endif %}
+        <form method="post" action="{{ url_for('admin_chapters.admin_toggle_chapter', num=ch.chapter_num) }}" style="display:inline;">
+          <button class="btn btn-secondary btn-sm" type="submit">{% if ch.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+        </form>
+      </div>
+      <div class="grid-2" style="gap:0.75rem;">
+        <form method="post" action="{{ url_for('admin_chapters.admin_chapter_deadline', num=ch.chapter_num) }}">
+          <label style="font-size:0.78rem;">Deadline start</label>
+          <input type="date" name="start_date" value="{{ ch.start_date|ymd }}" style="margin-bottom:0.35rem;">
+          <label style="font-size:0.78rem;">Deadline end</label>
+          <input type="date" name="end_date" value="{{ ch.end_date|ymd }}" style="margin-bottom:0.35rem;">
+          <button class="btn btn-sm" type="submit">Save deadline</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_chapters.admin_upload_game', num=ch.chapter_num) }}" enctype="multipart/form-data">
+          <label style="font-size:0.78rem;">Upload chapter game (.html)</label>
+          <input type="file" name="game_file" accept=".html,.htm" style="margin-bottom:0.35rem;">
+          <button class="btn btn-sm" type="submit">Upload HTML game</button>
+          {% if ch.game_uploaded_at %}
+          <p style="font-size:0.75rem;color:var(--text-dim);margin-top:0.3rem;">Uploaded: {{ ch.game_uploaded_at|ymdt }}</p>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h3>Upload students (Excel / CSV)</h3>
+  <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.6rem;">
+    Preferred: Excel <code>.xlsx</code> with columns <strong>Student_id, name, sex</strong>.
+    Also accepts CSV or paste: <code>student_id,name,sex</code>. Only these students can register.
+  </p>
+  <form method="post" action="{{ url_for('admin_students.admin_upload_ids') }}" enctype="multipart/form-data">
+    <label>Excel or CSV file</label>
+    <input type="file" name="ids_file" accept=".xlsx,.xlsm,.csv,.txt">
+    <label>Or paste rows</label>
+    <textarea name="ids_text" rows="4" placeholder="STU001,Ada Lovelace,F&#10;STU002,Alan Turing,M"></textarea>
+    <button class="btn btn-sm" type="submit">Upload students</button>
+  </form>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Pending password resets ({{ pending_resets|length }})</h3>
+    {% if pending_resets %}
+    <table>
+      <thead><tr><th>Student</th><th>Email</th><th>Requested</th><th></th></tr></thead>
+      <tbody>
+        {% for r in pending_resets %}
+        <tr>
+          <td>{{ r.student_id }}</td>
+          <td>{{ r.email }}</td>
+          <td style="font-size:0.8rem;">{{ r.created_at|ymdt }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_students.admin_resolve_reset', req_id=r.id) }}">
+              <input type="text" name="temp_password" placeholder="temp pass (auto if empty)" style="margin-bottom:0.3rem;">
+              <button class="btn btn-sm" type="submit">Generate &amp; resolve</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.5rem;">
+      After resolving, the temporary password is shown in a flash message — email it to the student.
+    </p>
+    {% else %}
+    <p style="color:var(--text-dim);">No pending requests.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Pending re-registration ({{ pending_reregs|length }})</h3>
+    {% if pending_reregs %}
+    <table>
+      <thead><tr><th>Student</th><th>Chapter</th><th>Requested</th><th></th></tr></thead>
+      <tbody>
+        {% for r in pending_reregs %}
+        <tr>
+          <td>{{ r.student_id }}</td>
+          <td>{{ r.chapter_num }}</td>
+          <td style="font-size:0.8rem;">{{ r.created_at|ymdt }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_students.admin_approve_rereg', req_id=r.id) }}">
+              <button class="btn btn-sm" type="submit">Approve</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text-dim);">No pending requests.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h3>Pre-registered students ({{ pre_users|length }})</h3>
+  <div class="grid-2" style="margin-bottom:0.75rem;">
+    <form method="post" action="{{ url_for('admin_students.admin_add_pre_user') }}">
+      <label>Add one Student ID</label>
+      <input name="student_id" placeholder="e.g. NaScR2072/16" required>
+      <input name="full_name" placeholder="Name (optional)">
+      <input name="sex" placeholder="Sex (optional)">
+      <button class="btn btn-sm" type="submit">Add ID</button>
+    </form>
+    <div>
+      <form method="post" action="{{ url_for('admin_students.admin_seed_default_ids') }}" style="margin-bottom:0.5rem;">
+        <p style="font-size:0.85rem;color:var(--text-dim);">Load bundled course list (37 NaScR IDs)</p>
+        <button class="btn btn-secondary btn-sm" type="submit">Import seed ID list</button>
+      </form>
+      <p style="font-size:0.85rem;margin-top:0.5rem;">
+        <a class="btn btn-sm" href="{{ url_for('admin_rankings.admin_export_ranking') }}">Download live ranking (Excel)</a>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('admin_rankings.admin_export_ranking', final=1) }}">Download final ranking (Excel)</a>
+      </p>
+    </div>
+  </div>
+  <div style="max-height:280px;overflow:auto;">
+    <table>
+      <thead><tr><th>Student ID</th><th>Name</th><th>Sex</th><th>Registered?</th><th>Username / Email</th><th></th></tr></thead>
+      <tbody>
+        {% for p in pre_users %}
+        <tr>
+          <td>{{ p.student_id }}</td>
+          <td>{{ p.full_name or '—' }}</td>
+          <td>{{ p.sex or '—' }}</td>
+          <td>{% if p.registered %}<span class="badge ok">Yes</span>{% else %}<span class="badge off">No</span>{% endif %}</td>
+          <td style="font-size:0.85rem;">{{ p.generated_username or '' }} {% if p.email %}<br>{{ p.email }}{% endif %}</td>
+          <td>
+            {% if not p.registered %}
+            <form method="post" action="{{ url_for('admin_students.admin_delete_pre_user', row_id=p.id) }}" onsubmit="return confirm('Delete {{ p.student_id }}?');">
+              <button class="btn btn-secondary btn-sm" type="submit">Delete</button>
+            </form>
+            {% else %}
+            <span class="badge off">Locked</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="color:var(--text-dim);">No IDs yet — import seed list, upload Excel, or add one by one.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Registered players ({{ users|length }})</h3>
+  <form method="post" action="{{ url_for('admin_students.admin_add_user') }}" class="grid-2" style="margin-bottom:1rem;">
+    <div>
+      <label>Add player — Student ID *</label>
+      <input name="student_id" required placeholder="NaScR2072/16">
+      <label>Full name *</label>
+      <input name="full_name" required>
+      <label>Sex</label>
+      <input name="sex" placeholder="M/F">
+    </div>
+    <div>
+      <label>Email *</label>
+      <input type="email" name="email" required>
+      <label>Temp password</label>
+      <input name="password" placeholder="default: changeme">
+      <button class="btn btn-sm" type="submit" style="margin-top:0.5rem;">Create player account</button>
+    </div>
+  </form>
+  <div style="max-height:280px;overflow:auto;">
+  <table>
+    <thead><tr><th>Student ID</th><th>Username</th><th>Name</th><th>Email</th><th>Status ch.</th><th>Joined</th><th></th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.student_id }}</td>
+        <td>{{ u.generated_username or '—' }}</td>
+        <td>{{ u.full_name or '—' }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.status_chapter or '—' }}</td>
+        <td style="font-size:0.8rem;">{{ u.created_at|ymdt }}</td>
+        <td style="white-space:nowrap;">
+          <a class="btn btn-sm" href="{{ url_for('admin_students.admin_player_scores', user_id=u.id) }}">Scores</a>
+          <form method="post" action="{{ url_for('admin_students.admin_delete_user', user_id=u.id) }}" style="display:inline;"
+                onsubmit="return confirm('Delete player {{ u.student_id }} and all scores?');">
+            <button class="btn btn-secondary btn-sm" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="color:var(--text-dim);">None yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Weekly &amp; final ranking snapshots</h3>
+  {% if season_ended %}<p class="badge warn">Season end date has passed</p>{% endif %}
+  <p style="font-size:0.85rem;color:var(--text-dim);margin:0.4rem 0;">
+    Snapshots are taken automatically once per ISO week when anyone opens rankings/dashboard.
+    You can also force a snapshot from <a href="{{ url_for('admin_rankings.admin_rankings') }}">Admin Rankings</a>.
+  </p>
+  <p style="font-size:0.88rem;">
+    <strong>Weekly:</strong>
+    {% for s in weekly_snaps %}
+      <a class="badge" href="{{ url_for('admin_rankings.admin_rankings', snapshot=s.id) }}">{{ s.week_label }}</a>
+    {% else %}
+      <span class="badge off">None yet</span>
+    {% endfor %}
+  </p>
+  <p style="font-size:0.88rem;margin-top:0.4rem;">
+    <strong>Final:</strong>
+    {% for s in final_snaps %}
+      <a class="badge ok" href="{{ url_for('admin_rankings.admin_rankings', snapshot=s.id) }}">{{ s.week_label }}</a>
+    {% else %}
+      <span class="badge off">Not frozen yet</span>
+    {% endfor %}
+  </p>
+</div>
+
+<div class="card">
+  <h3>Top overall rankings (preview)</h3>
+  <table>
+    <thead><tr><th>Rank</th><th>ID</th><th>Name</th><th>Eff. score</th><th>Passed</th></tr></thead>
+    <tbody>
+      {% for r in overall %}
+      <tr>
+        <td>{{ r.rank }}</td>
+        <td>{{ r.student_id }}</td>
+        <td>{{ r.full_name or '—' }}</td>
+        <td>{{ '%.1f'|format(r.overall_score) }}</td>
+        <td>{{ r.chapters_passed }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:var(--text-dim);">No scores yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

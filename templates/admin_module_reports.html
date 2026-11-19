@@ -1,0 +1,9 @@
+{% extends "admin_base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h2>Reports</h2>
+<div class="card">
+  <p><a class="btn" href="{{ url_for('admin_rankings.admin_export_ranking') }}">Export ranking Excel</a></p>
+  <p style="font-size:0.88rem;color:var(--dim);">Overall ranking export for semester reporting. Per-student detail is under Student management → View.</p>
+</div>
+{% endblock %}

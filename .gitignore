@@ -1,0 +1,31 @@
+# secrets and local config
+.env
+.env.*
+!.env.example
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# runtime data (never committed)
+backups/
+uploads/chapters/*
+!uploads/chapters/.gitkeep
+uploads/excel/*
+!uploads/excel/.gitkeep
+
+# mobile app
+mobile/node_modules/
+mobile/dist/
+public/static/mobile/*
+!public/static/mobile/README.txt
+
+# vercel
+.vercel/
+
+*.db
+.DS_Store

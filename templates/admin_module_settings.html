@@ -1,0 +1,27 @@
+{% extends "admin_base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h2>System settings</h2>
+<div class="card">
+  <h3>Season</h3>
+  <form method="post" action="{{ url_for('admin_chapters.admin_season') }}">
+    <label>Name</label><input name="name" value="{{ season.name if season else '' }}" />
+    <label>Start</label><input type="date" name="start_date" value="{{ season.start_date if season else '' }}" />
+    <label>End</label><input type="date" name="end_date" value="{{ season.end_date if season else '' }}" />
+    <button class="btn btn-sm" type="submit">Save season</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Platform branding (any course)</h3>
+  <form method="post" action="{{ url_for('admin_system.admin_save_branding') }}">
+    <label>App name</label><input name="app_name" value="{{ app_name }}" />
+    <label>Course name</label><input name="course_name" value="{{ course_name }}" />
+    <p style="font-size:0.85rem;color:var(--dim);">Games are independent HTML files — not tied to one textbook.</p>
+    <button class="btn btn-sm" type="submit">Save branding</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Policies</h3>
+  <p style="font-size:0.88rem;">Pass percent: {{ pass_percent }}% · Max levels/chapter: 7 · Architecture: {{ arch_ver }}</p>
+</div>
+{% endblock %}

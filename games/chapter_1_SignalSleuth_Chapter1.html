@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Sleuth – Chapter 1: The Origins of the Discrete Domain</title>
+<style>
+  :root {
+    --bg: #0d1b16;
+    --surface: #152a22;
+    --surface2: #1c352b;
+    --border: #2a4a3c;
+    --green: #3d9b6e;
+    --green-dim: #2a6b4a;
+    --accent: #e07a3d;
+    --accent-dim: #b85c28;
+    --text: #e8f0eb;
+    --text-dim: #9bb5a8;
+    --success: #3d9b6e;
+    --partial: #c9a227;
+    --fail: #c45c5c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 1.5rem; }
+  header {
+    background: linear-gradient(135deg, #0a1612, #152a22);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header .container { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .logo { font-weight: 700; font-size: 1.15rem; color: var(--green); letter-spacing: 0.04em; }
+  .logo span { color: var(--text-dim); font-weight: 400; font-size: 0.85rem; }
+  .header-stats { display: flex; gap: 1.2rem; align-items: center; font-size: 0.85rem; }
+  .stat { color: var(--text-dim); }
+  .stat strong { color: var(--green); }
+  .progress-bar-wrap { flex: 1; max-width: 180px; min-width: 120px; }
+  .progress-label { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.2rem; }
+  .progress-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green-dim), var(--green)); transition: width 0.4s ease; border-radius: 3px; }
+  .screen { display: none; animation: fadeIn 0.35s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .hero { text-align: center; padding: 2.5rem 1rem 2rem; }
+  .hero h1 {
+    font-size: 2.3rem;
+    background: linear-gradient(135deg, var(--green), #7dcea0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.4rem;
+  }
+  .hero .subtitle { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .hero .chapter-title {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 1.3rem;
+    margin: 1rem 0 1.5rem;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn:hover { background: #4cb380; transform: translateY(-1px); }
+  .btn:active { transform: none; }
+  .btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; transform: none; }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { background: var(--surface2); border-color: var(--green-dim); }
+  .btn-accent { background: var(--accent); }
+  .btn-accent:hover { background: var(--accent-dim); }
+  .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.85rem; }
+  .level-map { display: grid; gap: 0.7rem; margin: 1.3rem 0; }
+  .level-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    display: flex; align-items: center; gap: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .level-card:hover:not(.locked) { border-color: var(--green); background: var(--surface2); }
+  .level-card.locked { opacity: 0.42; cursor: not-allowed; }
+  .level-card.cleared { border-color: var(--green-dim); }
+  .level-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.05rem;
+    flex-shrink: 0;
+  }
+  .level-card:not(.locked):not(.cleared) .level-num { background: var(--green); color: #fff; }
+  .level-card.cleared .level-num { background: var(--green-dim); color: #fff; }
+  .level-card.locked .level-num { background: var(--surface2); color: var(--text-dim); }
+  .level-info { flex: 1; min-width: 0; }
+  .level-info h3 { font-size: 0.95rem; margin-bottom: 0.12rem; }
+  .level-info p { font-size: 0.78rem; color: var(--text-dim); }
+  .level-score-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    background: var(--surface2);
+    white-space: nowrap;
+  }
+  .level-score-badge.has-score { color: var(--green); border: 1px solid var(--green-dim); }
+  .diff-tag {
+    font-size: 0.7rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .diff-1, .diff-2 { color: #7dcea0; }
+  .diff-3, .diff-4 { color: #f0c674; }
+  .diff-5, .diff-6 { color: #e07a3d; }
+  .diff-7 { color: #e05c5c; }
+  .level-header {
+    display: flex; align-items: center; gap: 0.7rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+  .level-header h2 { font-size: 1.25rem; flex: 1; }
+  .case-brief, .clues-box, .questions-box, .feedback-box, .score-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .case-brief h3, .clues-box h3, .questions-box h3, .feedback-box h3, .score-summary h3 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--green);
+    margin-bottom: 0.55rem;
+  }
+  .clue {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface2);
+    border-left: 3px solid var(--green-dim);
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+  }
+  .question-block { margin-bottom: 1.15rem; }
+  .question-block label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--accent);
+    font-size: 0.92rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 88px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 0.65rem 0.85rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { outline: none; border-color: var(--green); }
+  textarea.scored-good { border-color: var(--success); }
+  textarea.scored-partial { border-color: var(--partial); }
+  textarea.scored-poor { border-color: var(--fail); }
+  .actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.4rem; }
+  .feedback-box { border-color: var(--green-dim); }
+  .feedback-box.hidden { display: none; }
+  .q-result {
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .q-result:last-child { border-bottom: none; }
+  .q-result-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 0.45rem;
+    flex-wrap: wrap;
+  }
+  .score-pill {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+  }
+  .score-pill.full { background: rgba(61,155,110,0.25); color: var(--success); }
+  .score-pill.partial { background: rgba(201,162,39,0.25); color: var(--partial); }
+  .score-pill.low { background: rgba(196,92,92,0.25); color: var(--fail); }
+  .model-answer {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.45rem 0;
+    font-size: 0.88rem;
+  }
+  .matched-list, .missing-list {
+    font-size: 0.85rem;
+    margin: 0.35rem 0;
+    padding-left: 0.3rem;
+  }
+  .matched-list { color: var(--success); }
+  .missing-list { color: var(--partial); }
+  .teaching-note {
+    font-style: italic;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 0.35rem;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--border);
+  }
+  .level-score-banner {
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+  .level-score-banner .big-score {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .level-score-banner .score-label { color: var(--text-dim); font-size: 0.9rem; }
+  .scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  .scoreboard-table th, .scoreboard-table td {
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .scoreboard-table th { color: var(--text-dim); font-weight: 600; font-size: 0.8rem; }
+  .scoreboard-table .score-cell { font-weight: 700; color: var(--green); }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--green);
+    color: #fff;
+    padding: 0.65rem 1.3rem;
+    border-radius: 8px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 200;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .no-copy, .no-copy * {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+  }
+  .model-answer, .teaching-note, .matched-list, .missing-list {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    user-select: none !important;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.7rem; }
+    .header-stats { width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="logo">SIGNAL SLEUTH <span>• Ch.1</span></div>
+    <div class="header-stats">
+      <div class="stat">Score: <strong id="totalScoreDisplay">0</strong></div>
+      <div class="stat">Cleared: <strong id="clearedDisplay">0/7</strong></div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-label">Progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- TITLE -->
+  <div id="screen-title" class="screen active">
+    <div class="hero">
+      <h1>Signal Sleuth</h1>
+      <p class="subtitle">Mysteries of Discrete-Time Signal Processing</p>
+      <div class="chapter-title">Chapter 1 — The Origins of the Discrete Domain</div>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 1.2rem; font-size:0.92rem;">
+        Answer free-text questions in your own words. The game scores each answer against key concepts.
+        To clear a level you must score more than half on every question. Retries earn only half marks. Feedback cannot be copied.
+      </p>
+      <div style="display:flex; gap:0.7rem; justify-content:center; flex-wrap:wrap;">
+        <button class="btn" onclick="showScreen('map')">Start Investigation →</button>
+        <button class="btn btn-secondary" onclick="showScreen('scores')">Scoreboard</button>
+      </div>
+      <div style="margin-top:1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="resetProgress()">Reset All Progress &amp; Scores</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL MAP -->
+  <div id="screen-map" class="screen">
+    <h2 style="margin-bottom:0.25rem;">Chapter 1 Levels</h2>
+    <p style="color:var(--text-dim); margin-bottom:1rem; font-size:0.88rem;">Clear levels in order. You must score more than half on every question to pass. Best scores are saved.</p>
+    <div class="level-map" id="levelMap"></div>
+    <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('title')">← Title</button>
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('scores')">Scoreboard</button>
+    </div>
+  </div>
+
+  <!-- LEVEL PLAY -->
+  <div id="screen-level" class="screen">
+    <div class="level-header">
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('map')">← Levels</button>
+      <h2 id="levelTitle"></h2>
+    </div>
+    <div class="case-brief">
+      <h3>Case Brief</h3>
+      <div id="caseBrief"></div>
+    </div>
+    <div class="clues-box">
+      <h3>Clues</h3>
+      <div id="cluesList"></div>
+    </div>
+    <div class="questions-box">
+      <h3>Mystery Questions — Type your answers</h3>
+      <div id="questionsList"></div>
+      <div class="actions">
+        <button class="btn" id="btnSubmit" onclick="submitAnswers()">Submit Answers for Scoring</button>
+        <button class="btn btn-secondary" onclick="showScreen('map')">Save &amp; Exit</button>
+      </div>
+    </div>
+    <div class="feedback-box hidden no-copy" id="feedbackBox">
+      <div class="level-score-banner" id="levelScoreBanner"></div>
+      <h3>Evaluation &amp; Feedback</h3>
+      <div id="feedbackContent"></div>
+      <div class="actions" style="margin-top:1rem;">
+        <button class="btn btn-accent" id="btnContinue" onclick="afterScoring()">Continue</button>
+        <button class="btn btn-secondary" onclick="retryLevel()">Retry Level</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div id="screen-scores" class="screen">
+    <h2 style="margin-bottom:0.5rem;">Scoreboard — Chapter 1</h2>
+    <div class="score-summary">
+      <h3>Overall</h3>
+      <p style="font-size:1.1rem;">Total Best Score: <strong id="sbTotal" style="color:var(--green);">0</strong> / <span id="sbMax">0</span></p>
+      <p style="color:var(--text-dim); font-size:0.9rem; margin-top:0.3rem;">Levels cleared: <span id="sbCleared">0</span> / 7</p>
+    </div>
+    <div class="score-summary">
+      <h3>Per-Level Best Scores</h3>
+      <table class="scoreboard-table">
+        <thead>
+          <tr><th>Level</th><th>Title</th><th>Best Score</th><th>Max</th><th>Status</th></tr>
+        </thead>
+        <tbody id="scoreTableBody"></tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('map')">← Back to Levels</button>
+  </div>
+
+</main>
+
+<footer>
+  Based on Alan V. Oppenheim &amp; Ronald W. Schafer — <em>Discrete-Time Signal Processing</em>, 3rd Edition<br>
+  Signal Sleuth • Chapter 1 of 10 • Answers evaluated by keyword/concept matching
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== LEVEL DATA WITH KEY CONCEPTS FOR SCORING ========== */
+const LEVELS = [
+  {
+    id: 1,
+    title: "The Nature of a Signal",
+    difficulty: "Easy",
+    maxScore: 30,
+    brief: "You receive an anonymous tip: “Not everything that varies is a signal, and not every signal is digital.” A junior analyst has mixed up fundamental definitions and is about to brief the director incorrectly. Your job is to restore the correct conceptual foundation before the meeting.",
+    clues: [
+      "“The term signal is generally applied to something that conveys information.”",
+      "Signals may convey information about the state or behavior of a physical system, or be synthesized to communicate between humans or machines.",
+      "Continuous-time signals are defined along a continuum of time (analog signals). Discrete-time signals are sequences of numbers defined only at discrete instants.",
+      "Digital signals are those for which both time and amplitude are discrete.",
+      "The principal focus of the book is discrete-time signals and systems, not necessarily finite-precision digital signals."
+    ],
+    questions: [
+      {
+        text: "What is the essential property that makes something a “signal” according to the book?",
+        points: 10,
+        keys: [
+          { phrases: ["conveys information", "convey information", "carries information", "transmits information", "contains information"], weight: 6, label: "conveys information" },
+          { phrases: ["pattern of variations", "pattern of variation", "variations", "varies"], weight: 4, label: "pattern of variations" }
+        ],
+        model: "A signal is something that conveys information. The information is contained in a pattern of variations.",
+        note: "Emphasize “conveys information.” Not every mathematical function is automatically a signal."
+      },
+      {
+        text: "Distinguish clearly between: (a) continuous-time, (b) discrete-time, and (c) digital signals.",
+        points: 12,
+        keys: [
+          { phrases: ["continuous-time", "continuous time", "analog", "continuum"], weight: 3, label: "continuous-time / analog" },
+          { phrases: ["discrete-time", "discrete time", "sequence", "integer"], weight: 4, label: "discrete-time / sequence" },
+          { phrases: ["digital", "amplitude", "finite precision", "quantized", "both time and amplitude"], weight: 5, label: "digital = time + amplitude discrete" }
+        ],
+        model: "(a) Continuous-time: independent variable continuous (analog). (b) Discrete-time: sequence defined at discrete instants. (c) Digital: both time and amplitude are discrete.",
+        note: "Digital is a special case of discrete-time with quantized amplitude."
+      },
+      {
+        text: "Why does the book emphasize discrete-time processing rather than strictly digital processing?",
+        points: 8,
+        keys: [
+          { phrases: ["discrete-time", "more general", "general framework", "includes digital", "special case"], weight: 4, label: "discrete-time is more general" },
+          { phrases: ["high-precision", "fine quantization", "high precision", "valid for digital", "useful for digital"], weight: 4, label: "still useful for digital / high precision" }
+        ],
+        model: "Discrete-time theory is more general and remains valid for digital implementations, especially with fine quantization. Digital is a special case.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "The Great Shift",
+    difficulty: "Easy–Medium",
+    maxScore: 30,
+    brief: "A timeline of signal processing history has been vandalized. Key milestones are missing or placed in the wrong decade. You must reconstruct the central technological and conceptual shift that moved the field from almost exclusively analog to predominantly discrete-time / digital.",
+    clues: [
+      "Prior to the 1960s, signal processing technology was almost exclusively continuous-time analog.",
+      "A major shift occurred because of the rapid evolution of digital computers, microprocessors, and low-cost A/D and D/A conversion chips.",
+      "Important theoretical developments reinforced the hardware advances: the FFT algorithm, parametric signal modeling, multirate techniques, polyphase filters, and wavelet expansions.",
+      "One vivid example: analog radio systems are evolving into reconfigurable “software radios” implemented almost exclusively with digital computation.",
+      "Early digital computer use in DSP (1950s) was often non-real-time (e.g., seismic data) or used for simulation of analog systems before hardware construction."
+    ],
+    questions: [
+      {
+        text: "What was the dominant technology for signal processing before the 1960s?",
+        points: 8,
+        keys: [
+          { phrases: ["analog", "continuous-time", "continuous time", "electronic circuits", "mechanical"], weight: 8, label: "analog / continuous-time" }
+        ],
+        model: "Continuous-time analog technology (electronic circuits or mechanical devices).",
+        note: ""
+      },
+      {
+        text: "Name three enabling factors (hardware or theoretical) that drove the shift to discrete-time / digital methods.",
+        points: 12,
+        keys: [
+          { phrases: ["computer", "microprocessor", "digital computer"], weight: 3, label: "computers / microprocessors" },
+          { phrases: ["a/d", "d/a", "analog to digital", "converter", "conversion"], weight: 3, label: "A/D and D/A converters" },
+          { phrases: ["fft", "fast fourier", "parametric", "multirate", "polyphase", "wavelet"], weight: 3, label: "FFT or other theory advances" },
+          { phrases: ["three", "3 ", "and"], weight: 3, label: "mentioned multiple factors" }
+        ],
+        model: "Any three of: digital computers/microprocessors; low-cost A/D & D/A; FFT; parametric modeling; multirate; polyphase; wavelets.",
+        note: "Hardware + theory together enabled the shift."
+      },
+      {
+        text: "Why were early digital computers initially viewed mainly as tools to approximate or simulate analog systems?",
+        points: 10,
+        keys: [
+          { phrases: ["slow", "expensive", "not real-time", "non-real-time", "offline", "could not", "couldn't"], weight: 5, label: "speed / cost / non-real-time limits" },
+          { phrases: ["simulate", "approximation", "approximate", "analog"], weight: 5, label: "used to simulate analog" }
+        ],
+        model: "Early computers were expensive and slow; they could not process in real time, so they were used to simulate analog systems or process recorded data offline.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "The FFT Revelation",
+    difficulty: "Medium",
+    maxScore: 32,
+    brief: "A sealed archive from 1965 has been opened. Inside is a short note claiming that a single algorithmic discovery “changed the economics of signal processing overnight.” Your mission is to identify the discovery, its authors, its deeper conceptual impact, and why it was more than just a faster calculation method.",
+    clues: [
+      "Cooley and Tukey (1965) disclosed an efficient class of algorithms for computing Fourier transforms — collectively known as the FFT.",
+      "The FFT reduced computation time of the Fourier transform by orders of magnitude.",
+      "Many previously impractical algorithms suddenly became interactive and experimentally usable.",
+      "Critically, the FFT is an inherently discrete-time concept. It computes the Fourier transform of a discrete-time signal exactly; it is not merely an approximation to a continuous-time transform.",
+      "This realization stimulated a reformulation of many signal-processing concepts in exact discrete-time mathematics and helped establish discrete-time signal processing as a field in its own right.",
+      "Historical research later showed that Gauss had discovered the fundamental principle of the FFT as early as 1805."
+    ],
+    questions: [
+      {
+        text: "Who published the modern FFT algorithm and in what year?",
+        points: 10,
+        keys: [
+          { phrases: ["cooley", "tukey"], weight: 6, label: "Cooley & Tukey" },
+          { phrases: ["1965"], weight: 4, label: "year 1965" }
+        ],
+        model: "J. W. Cooley and J. W. Tukey, 1965. (Gauss had the core idea in 1805.)",
+        note: ""
+      },
+      {
+        text: "Beyond raw speed, what conceptual shift did the FFT help trigger in the field?",
+        points: 12,
+        keys: [
+          { phrases: ["discrete-time", "exact", "in its own right", "independent field", "reformulation", "reformulate"], weight: 6, label: "discrete-time as independent field" },
+          { phrases: ["practical", "interactive", "experimentation", "feasible"], weight: 4, label: "made algorithms practical / interactive" },
+          { phrases: ["mathematics", "theory", "concepts"], weight: 2, label: "reformulated theory/math" }
+        ],
+        model: "It encouraged reformulation of SP theory in exact discrete-time mathematics and helped establish discrete-time SP as a field in its own right (not just analog approximation).",
+        note: ""
+      },
+      {
+        text: "Why is it significant that the FFT is “inherently discrete-time” rather than an approximation of a continuous-time method?",
+        points: 10,
+        keys: [
+          { phrases: ["exact", "discrete-time domain", "not an approximation", "not approximation", "stands on its own", "inherently"], weight: 6, label: "exact discrete-time relationships" },
+          { phrases: ["sequence", "discrete-time signal", "not continuous"], weight: 4, label: "operates on discrete sequences" }
+        ],
+        model: "The FFT yields exact relationships in the discrete-time domain; it is not a numerical approximation to a continuous-time transform. This reinforced discrete-time theory standing on its own.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 4,
+    title: "Real-Time vs. Stored Processing",
+    difficulty: "Medium",
+    maxScore: 30,
+    brief: "Two engineers are arguing. One insists every useful DSP system must run in real time. The other points to compact discs and MP3 players as counter-examples. You must settle the dispute with precise definitions and examples drawn from the chapter.",
+    clues: [
+      "Real-time operation is often required or desirable, especially when continuous-time signals are converted, processed, and converted back.",
+      "Non-real-time applications are also common. The compact-disc player and MP3 player are examples of asymmetric systems.",
+      "In such systems the input may be processed only once (possibly slower or faster than real time), stored, and later reconstructed in real time for playback.",
+      "Early seismic processing on digital computers often required minutes or hours of computer time to process only seconds of data — clearly non-real-time, yet extremely valuable.",
+      "The flexibility of the digital computer made even non-real-time processing attractive compared with building specialized analog hardware."
+    ],
+    questions: [
+      {
+        text: "Define “asymmetric” processing as used for CD / MP3 systems.",
+        points: 10,
+        keys: [
+          { phrases: ["once", "processed once", "offline", "stored", "store"], weight: 5, label: "process once / store" },
+          { phrases: ["playback", "reconstruct", "real time", "real-time", "later"], weight: 5, label: "later real-time playback" }
+        ],
+        model: "Signal is processed once (possibly offline), stored, then reconstructed in real time for playback later.",
+        note: ""
+      },
+      {
+        text: "Give one historical example of valuable non-real-time discrete-time processing mentioned in the chapter.",
+        points: 10,
+        keys: [
+          { phrases: ["seismic", "geophysical", "geophysic", "exploration", "earthquake"], weight: 8, label: "seismic / geophysical" },
+          { phrases: ["offline", "hours", "minutes", "non-real-time", "recorded"], weight: 2, label: "non-real-time nature" }
+        ],
+        model: "Geophysical/seismic exploration: signals digitized and processed offline, often taking far longer than the data duration.",
+        note: ""
+      },
+      {
+        text: "Why did non-real-time digital processing still represent a major advance even when slower than real time?",
+        points: 10,
+        keys: [
+          { phrases: ["flexibility", "flexible", "change", "adjust", "experiment"], weight: 5, label: "flexibility" },
+          { phrases: ["no hardware", "without building", "analog hardware", "specialized hardware", "economic", "payoff"], weight: 5, label: "avoid new analog hardware / economic value" }
+        ],
+        model: "Flexibility: algorithms and parameters could be changed without building new analog hardware. Scientific/economic payoff justified longer computation.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 5,
+    title: "Why Fundamentals Still Matter",
+    difficulty: "Medium–Hard",
+    maxScore: 30,
+    brief: "A new hire claims: “I don’t need to understand the theory — MATLAB and Python libraries already implement the FFT, filters, and everything else.” Your task is to explain, using the chapter’s own arguments, why a solid grasp of the underlying concepts remains essential.",
+    clues: [
+      "Sophisticated software systems (MATLAB, Simulink, Mathematica, LabVIEW) incorporate many concepts and design techniques.",
+      "It is not generally necessary to know the microscopic details of how an FFT is coded, but it is essential to understand what is computed and how the result should be interpreted.",
+      "Intelligent use of the tools requires understanding of the concepts in the text.",
+      "Environments that incorporate fundamental properties (e.g., convolution ↔ multiplication, sampling rate ↔ aliasing) can automatically explore rearrangements and efficient implementations.",
+      "The same principle applies to future network and distributed processing environments: high-level descriptions of processing can be mapped dynamically only if the underlying theorems are known."
+    ],
+    questions: [
+      {
+        text: "According to the authors, what must a user still understand even when using high-level signal-processing software?",
+        points: 10,
+        keys: [
+          { phrases: ["what is computed", "what is being computed", "interpret", "interpretation", "how the result"], weight: 6, label: "what is computed / how to interpret" },
+          { phrases: ["concepts", "theorems", "properties", "fundamentals", "theory"], weight: 4, label: "underlying concepts/theory" }
+        ],
+        model: "What is being computed and how the numerical result should be interpreted. Understanding of concepts, theorems, and properties is required.",
+        note: ""
+      },
+      {
+        text: "Give one concrete example of a fundamental property that enables automatic exploration of alternative implementations.",
+        points: 12,
+        keys: [
+          { phrases: ["convolution", "multiplication", "frequency domain", "time domain"], weight: 6, label: "convolution ↔ multiplication" },
+          { phrases: ["sampling", "aliasing", "decimation", "interpolation"], weight: 6, label: "sampling rate / aliasing" }
+        ],
+        model: "Convolution in time ↔ multiplication in frequency; or the relationship between sampling rate and aliasing (enables decimation/interpolation strategies).",
+        note: "Either major example is fine."
+      },
+      {
+        text: "Why does the chapter argue that the purpose of a fundamental textbook is “to uncover, rather than cover, a subject”?",
+        points: 8,
+        keys: [
+          { phrases: ["uncover", "explore", "open up", "variety", "applications", "further", "challenging theory"], weight: 5, label: "open up exploration" },
+          { phrases: ["not exhaust", "not list every", "not cover everything", "rather than cover"], weight: 3, label: "not exhaustive coverage" }
+        ],
+        model: "A good fundamental text opens a rich variety of theory and applications for the reader to explore, rather than attempting to list every topic exhaustively.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 6,
+    title: "Applications That Shaped the Field",
+    difficulty: "Hard",
+    maxScore: 30,
+    brief: "A funding agency asks: “Which application domains actually drove the core techniques of discrete-time signal processing, and which domains are now being transformed by those same techniques?” You must map the historical drivers to modern impact areas using only material from the Introduction.",
+    clues: [
+      "Early drivers included seismology / geophysics, radar, and communication systems.",
+      "Speech processing (vocoders, coding) was an important early application and simulation test-bed.",
+      "Modern ubiquitous applications include high-definition video, high-fidelity audio, cell phones, MPEG/JPEG compression, and solid-state memory recovery.",
+      "Emerging or expanding domains explicitly mentioned: financial engineering (prediction, filtering of economic data), medical imaging and diagnosis, DNA sequence analysis, and distributed sensor arrays (MEMS).",
+      "Multidimensional signal processing (images, video, seismic volumes) builds directly on the one-dimensional foundations.",
+      "Adaptive filtering, linear predictive coding (LPC), and high-resolution spectral analysis are presented as advanced topics that rest on the same fundamentals."
+    ],
+    questions: [
+      {
+        text: "List three early application domains that provided the context for developing many core DSP techniques.",
+        points: 10,
+        keys: [
+          { phrases: ["seismic", "seismology", "geophysic"], weight: 3, label: "seismology/geophysics" },
+          { phrases: ["radar"], weight: 3, label: "radar" },
+          { phrases: ["communication", "speech", "vocoder"], weight: 3, label: "communications / speech" },
+          { phrases: ["three", "3"], weight: 1, label: "listed multiple" }
+        ],
+        model: "Seismology/geophysics, radar, and communications (speech/vocoders also important).",
+        note: ""
+      },
+      {
+        text: "Name at least three contemporary or emerging application areas highlighted in the chapter.",
+        points: 10,
+        keys: [
+          { phrases: ["video", "audio", "multimedia", "mpeg", "jpeg", "cell phone", "phone"], weight: 3, label: "multimedia / phones" },
+          { phrases: ["finance", "financial", "economic"], weight: 3, label: "financial engineering" },
+          { phrases: ["medical", "imaging", "diagnosis", "dna", "mems", "sensor"], weight: 3, label: "medical / DNA / MEMS" },
+          { phrases: ["three", "3"], weight: 1, label: "listed multiple" }
+        ],
+        model: "Any three of: HD video/audio, cell phones, MPEG/JPEG, financial engineering, medical imaging, DNA analysis, MEMS sensors, software radio.",
+        note: ""
+      },
+      {
+        text: "How does the chapter illustrate that new application needs can both borrow from existing knowledge and stimulate entirely new algorithms?",
+        points: 10,
+        keys: [
+          { phrases: ["adapt", "borrow", "existing", "transfer"], weight: 4, label: "adapt existing knowledge" },
+          { phrases: ["stimulate", "new algorithm", "new algorithms", "invent", "drive new"], weight: 4, label: "stimulate new algorithms" },
+          { phrases: ["two-way", "interaction", "thrive", "application"], weight: 2, label: "two-way interaction" }
+        ],
+        model: "Existing knowledge can be adapted to new fields, but new requirements often stimulate entirely new algorithms and hardware. SP thrives on this two-way interaction.",
+        note: ""
+      }
+    ]
+  },
+  {
+    id: 7,
+    title: "The Unfinished Story – Synthesis",
+    difficulty: "Hardest",
+    maxScore: 28,
+    brief: "You are given a sealed envelope containing a single question from the authors themselves:<br><br><em>“Looking at the entire arc from Newton’s finite-difference methods, through Gauss’s early FFT insight, the 1950s–60s computer simulations, the 1965 FFT disclosure, the microprocessor revolution, and today’s software tools and emerging applications — what is the single most important reason that a thorough grounding in the fundamental mathematics of discrete-time signals and systems remains indispensable?”</em><br><br>Formulate a clear, evidence-based answer weaving together historical, technological, and conceptual threads.",
+    clues: [
+      "The field has advanced in uneven steps; each major hardware leap changed which algorithms were practical, but the underlying mathematics stayed central.",
+      "Many algorithms that first appeared “impractical” later became essential once hardware caught up — the theory had to be ready in advance.",
+      "Even when computation is abundant, correct interpretation still requires deep understanding of properties.",
+      "New application domains continue to appear; the people who recognize and solve the new problems possess the fundamentals.",
+      "The authors’ goal is to uncover the coherent theory so readers can appreciate existing applications and contribute to future ones."
+    ],
+    questions: [
+      {
+        text: "In your own words, answer the authors’ sealed question. Support your reasoning with at least three distinct ideas from the chapter.",
+        points: 20,
+        keys: [
+          { phrases: ["stable", "core", "mathematics", "fundamentals", "theory remains", "underlying"], weight: 4, label: "math/fundamentals as stable core" },
+          { phrases: ["hardware", "change", "wave", "impractical", "viable", "ready in advance"], weight: 4, label: "hardware changes, theory must be ready" },
+          { phrases: ["interpret", "interpretation", "aliasing", "properties", "meaning"], weight: 4, label: "interpretation still needed" },
+          { phrases: ["new application", "emerging", "future", "recognize", "contribute"], weight: 4, label: "new applications need fundamentals" },
+          { phrases: ["software", "library", "matlab", "not enough", "abstraction"], weight: 4, label: "software alone is not enough" }
+        ],
+        model: "Fundamentals remain the stable core while hardware and applications change. Theory must be ready before hardware makes algorithms practical. Interpretation and new application domains still require deep conceptual knowledge that libraries cannot replace.",
+        note: "Strong answers connect historical contingency, discrete-time nature of tools, limits of software abstraction, and emerging applications."
+      },
+      {
+        text: "(Bonus) Which idea from Chapter 1 do you find most memorable as a guiding principle, and why?",
+        points: 8,
+        keys: [
+          { phrases: ["uncover", "cover", "fundamental", "principle", "guiding", "remember", "because", "important"], weight: 5, label: "stated a principle + reason" },
+          { phrases: ["fft", "discrete-time", "field in its own right", "flexibility", "application"], weight: 3, label: "referenced a concrete idea" }
+        ],
+        model: "Open reflection — any thoughtful choice supported by a reason is valid (e.g. “uncover rather than cover”, or discrete-time SP becoming a field in its own right).",
+        note: "Credit for engagement and justification."
+      }
+    ]
+  }
+];
+
+const _ssUid = String(window.SS_USER_ID || '').trim();
+const STORAGE_KEY = _ssUid && _ssUid !== '0'
+  ? ('signalSleuth_ch1_u' + _ssUid + '_v4')
+  : ('signalSleuth_ch1_ephemeral_' + String(Math.random()).slice(2));
+// Per-user key — never share 'anon' across students on one browser
+try {
+  // Drop legacy shared keys from older builds
+  ['signalSleuth_ch1_v2', 'signalSleuth_ch1_uanon_v3', 'signalSleuth_ch1_u0_v3'].forEach(function(k) {
+    localStorage.removeItem(k);
+  });
+} catch (e) {}
+
+function defaultProgress() {
+  return {
+    cleared: [],
+    scores: {},       // levelId -> best score
+    attempts: {},     // levelId -> number of attempts
+    lastAnswers: {}   // optional
+  };
+}
+
+function getProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultProgress();
+    const p = JSON.parse(raw);
+    if (!p.scores) p.scores = {};
+    if (!p.cleared) p.cleared = [];
+    if (!p.attempts) p.attempts = {};
+    return p;
+  } catch { return defaultProgress(); }
+}
+
+function saveProgress(p) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  updateHeaderUI();
+  if (typeof syncFromServer === 'function') syncFromServer();
+}
+
+function totalMaxScore() {
+  return LEVELS.reduce((s, l) => s + l.maxScore, 0);
+}
+
+function totalBestScore(p) {
+  return Object.values(p.scores || {}).reduce((s, v) => s + (v || 0), 0);
+}
+
+function updateHeaderUI() {
+  const p = getProgress();
+  const cleared = p.cleared.length;
+  document.getElementById('totalScoreDisplay').textContent = totalBestScore(p);
+  document.getElementById('clearedDisplay').textContent = cleared + '/7';
+  document.getElementById('progressFill').style.width = (cleared / 7 * 100) + '%';
+}
+
+/** Pull server scores into local cache (source of truth = MySQL). */
+async function syncFromServer() {
+  if (!window.SignalSleuthGame || !SignalSleuthGame.getMyScores) return;
+  try {
+    const data = await SignalSleuthGame.getMyScores();
+    const levels = data.levels || [];
+    const p = getProgress();
+    levels.forEach((row) => {
+      const id = row.level_num;
+      if (row.best_score != null) p.scores[id] = row.best_score;
+      if (row.attempts != null) p.attempts[id] = row.attempts;
+      if (row.cleared && !p.cleared.includes(id)) p.cleared.push(id);
+    });
+    p.cleared.sort((a, b) => a - b);
+    saveProgress(p);
+  } catch (e) {
+    console.warn('syncFromServer', e);
+  }
+}
+
+function isUnlocked(levelId) {
+  if (Number(levelId) === 1) return true;
+  const p = getProgress();
+  const prev = Number(levelId) - 1;
+  if (p.cleared.map(Number).includes(prev)) return true;
+  // Fallback: previous level best score >= 50%
+  const max = (LEVELS.find(l => l.id === prev) || {}).maxScore || 0;
+  const best = Number(p.scores[prev] || 0);
+  return max > 0 && best / max >= 0.5;
+}
+
+function isCleared(levelId) {
+  const p = getProgress();
+  if (p.cleared.map(Number).includes(Number(levelId))) return true;
+  const max = (LEVELS.find(l => l.id === Number(levelId)) || {}).maxScore || 0;
+  const best = Number(p.scores[levelId] || 0);
+  return max > 0 && best / max >= 0.5;
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'map') renderMap();
+  if (name === 'scores') renderScoreboard();
+  window.scrollTo(0, 0);
+}
+
+function renderMap() {
+  const map = document.getElementById('levelMap');
+  const p = getProgress();
+  map.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const unlocked = isUnlocked(lv.id);
+    const cleared = isCleared(lv.id);
+    const best = p.scores[lv.id];
+    const card = document.createElement('div');
+    card.className = 'level-card' + (unlocked ? '' : ' locked') + (cleared ? ' cleared' : '');
+    let scoreHtml = best !== undefined
+      ? `<span class="level-score-badge has-score">${best}/${lv.maxScore}</span>`
+      : `<span class="level-score-badge">—/${lv.maxScore}</span>`;
+    card.innerHTML = `
+      <div class="level-num">${cleared ? '✓' : lv.id}</div>
+      <div class="level-info">
+        <h3>${lv.title}</h3>
+        <p>${unlocked ? (cleared ? 'Cleared — replay to improve score' : 'Unlocked — click to play') : 'Locked'}</p>
+      </div>
+      ${scoreHtml}
+      <span class="diff-tag diff-${lv.id}">${lv.difficulty}</span>
+    `;
+    if (unlocked) card.onclick = () => openLevel(lv.id);
+    map.appendChild(card);
+  });
+}
+
+function renderScoreboard() {
+  const p = getProgress();
+  document.getElementById('sbTotal').textContent = totalBestScore(p);
+  document.getElementById('sbMax').textContent = totalMaxScore();
+  document.getElementById('sbCleared').textContent = p.cleared.length;
+  const tbody = document.getElementById('scoreTableBody');
+  tbody.innerHTML = LEVELS.map(lv => {
+    const best = p.scores[lv.id];
+    const status = isCleared(lv.id) ? 'Cleared' : (isUnlocked(lv.id) ? 'Unlocked' : 'Locked');
+    return `<tr>
+      <td>${lv.id}</td>
+      <td>${lv.title}</td>
+      <td class="score-cell">${best !== undefined ? best : '—'}</td>
+      <td>${lv.maxScore}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+let currentLevelId = null;
+let lastLevelResult = null;
+
+function openLevel(id) {
+  currentLevelId = id;
+  lastLevelResult = null;
+  const lv = LEVELS.find(l => l.id === id);
+  const attemptSoFar = (getProgress().attempts[lv.id] || 0);
+  const attemptHint = attemptSoFar === 0
+    ? 'First attempt — full marks'
+    : `Attempt #${attemptSoFar + 1} — retry scores are halved`;
+  document.getElementById('levelTitle').textContent = `Level ${lv.id}: ${lv.title}`;
+  // show attempt hint under title if element exists, else append to case brief briefly
+  let hintEl = document.getElementById('attemptHint');
+  if (!hintEl) {
+    hintEl = document.createElement('p');
+    hintEl.id = 'attemptHint';
+    hintEl.style.cssText = 'color:var(--text-dim);font-size:0.85rem;margin:-0.5rem 0 1rem;';
+    document.getElementById('levelTitle').parentElement.appendChild(hintEl);
+  }
+  hintEl.textContent = attemptHint;
+  hintEl.style.color = attemptSoFar === 0 ? 'var(--text-dim)' : 'var(--accent)';
+  document.getElementById('caseBrief').innerHTML = lv.brief;
+  document.getElementById('cluesList').innerHTML = lv.clues.map((c, i) =>
+    `<div class="clue"><strong>Clue ${String.fromCharCode(65+i)}:</strong> ${c}</div>`
+  ).join('');
+  document.getElementById('questionsList').innerHTML = lv.questions.map((q, i) => `
+    <div class="question-block">
+      <label>Q${i+1}. ${q.text} <span style="color:var(--text-dim);font-weight:400;">(${q.points} pts)</span></label>
+      <textarea id="ans-${i}" placeholder="Type your answer in your own words..."></textarea>
+    </div>
+  `).join('');
+  document.getElementById('feedbackBox').classList.add('hidden');
+  document.getElementById('feedbackContent').innerHTML = '';
+  document.getElementById('btnSubmit').style.display = '';
+  document.getElementById('questions-box') || true;
+  showScreen('level');
+}
+
+/** Normalize text for matching */
+function normalize(s) {
+  return (s || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Score one answer against its key concepts */
+function evaluateAnswer(userText, question) {
+  const norm = normalize(userText);
+  if (!norm || norm.length < 3) {
+    return { score: 0, max: question.points, matched: [], missing: question.keys.map(k => k.label), ratio: 0 };
+  }
+  let earnedWeight = 0;
+  let totalWeight = 0;
+  const matched = [];
+  const missing = [];
+  question.keys.forEach(k => {
+    totalWeight += k.weight;
+    const hit = k.phrases.some(ph => norm.includes(normalize(ph)));
+    if (hit) {
+      earnedWeight += k.weight;
+      matched.push(k.label);
+    } else {
+      missing.push(k.label);
+    }
+  });
+  const ratio = totalWeight > 0 ? earnedWeight / totalWeight : 0;
+  // Scale to question points; give a small floor if they wrote something substantial but missed keys
+  let score = Math.round(ratio * question.points);
+  if (score === 0 && norm.length > 40) score = Math.min(2, question.points); // participation crumb
+  return { score, max: question.points, matched, missing, ratio };
+}
+
+async function submitAnswers() {
+  const lv = LEVELS.find(l => l.id === currentLevelId);
+  const results = [];
+  let totalEarned = 0;
+  let totalMax = 0;
+
+  lv.questions.forEach((q, i) => {
+    const ta = document.getElementById('ans-' + i);
+    const userAns = ta ? ta.value : '';
+    const ev = evaluateAnswer(userAns, q);
+    totalEarned += ev.score;
+    totalMax += ev.max;
+    results.push({ q, userAns, ev });
+    results[results.length - 1].ev.rawScore = ev.score;
+
+    if (ta) {
+      ta.classList.remove('scored-good', 'scored-partial', 'scored-poor');
+      if (ev.ratio >= 0.75) ta.classList.add('scored-good');
+      else if (ev.ratio >= 0.35) ta.classList.add('scored-partial');
+      else ta.classList.add('scored-poor');
+    }
+  });
+
+  // Full marks always; platform counts attempts on the server (no halfing)
+  const p = getProgress();
+  const priorAttempts = p.attempts[lv.id] || 0;
+  const isRetry = priorAttempts >= 1;
+  const rawEarned = totalEarned;
+  const prevBest = p.scores[lv.id] || 0;
+  // Platform rule: clear at >= 50% overall
+  const passed = totalMax > 0 && (totalEarned / totalMax) >= 0.5;
+  const isNewBest = totalEarned > prevBest;
+  if (isNewBest) p.scores[lv.id] = totalEarned;
+  p.attempts[lv.id] = priorAttempts + 1;
+  if (passed && !p.cleared.includes(lv.id)) {
+    p.cleared.push(lv.id);
+    p.cleared.sort((a, b) => a - b);
+  }
+  saveProgress(p); // local UX cache only — server is source of truth
+
+  const feedbackPayload = results.map((r) => ({
+    question: r.q.text,
+    answer: r.userAns,
+    score: r.ev.score,
+    max: r.ev.max,
+    feedback: (r.ev.matched && r.ev.matched.length
+      ? 'Matched: ' + r.ev.matched.join(', ')
+      : 'Weak coverage') +
+      (r.ev.missing && r.ev.missing.length ? ' | Missing: ' + r.ev.missing.join(', ') : ''),
+  }));
+
+  // === REQUIRED: sync to Signal Sleuth backend (MySQL) ===
+  let serverMsg = '';
+  let serverCleared = passed;
+  let attemptNum = priorAttempts + 1;
+  try {
+    if (window.SignalSleuthGame && typeof SignalSleuthGame.submitScore === 'function') {
+      const data = await SignalSleuthGame.submitScore({
+        level_num: lv.id,
+        answers: results.map((r, i) => ({ q_index: i + 1, answer: r.userAns || '' })),
+        // score fields ignored by server when answers present
+      });
+      if (data.score != null) totalEarned = Number(data.score);
+      if (data.max_score != null) totalMax = Number(data.max_score);
+      if (data.feedback) { /* server feedback available */ }
+      serverCleared = !!(data.level_cleared || data.cleared || passed);
+      attemptNum = data.attempts || attemptNum;
+      if (data.level_score != null && data.level_score > (p.scores[lv.id] || 0)) {
+        p.scores[lv.id] = data.level_score;
+        saveProgress(p);
+      }
+      // Always mark cleared in local cache when pass (>=50%) so next level unlocks
+      if (serverCleared || (totalMax > 0 && totalEarned / totalMax >= 0.5)) {
+        serverCleared = true;
+        if (!p.cleared.map(Number).includes(Number(lv.id))) {
+          p.cleared.push(Number(lv.id));
+          p.cleared.sort((a, b) => a - b);
+        }
+        saveProgress(p);
+      }
+      serverMsg = ' · Saved to server';
+    } else {
+      serverMsg = ' · WARNING: bridge missing — score may not reach the database';
+      console.warn('SignalSleuthGame bridge not loaded');
+    }
+  } catch (err) {
+    serverMsg = ' · Server save failed: ' + (err.message || err);
+    console.error(err);
+  }
+
+  lastLevelResult = { totalEarned, totalMax, passed: serverCleared, isNewBest, results, isRetry, rawEarned, attemptNum };
+
+  const pct = totalMax ? Math.round(totalEarned / totalMax * 100) : 0;
+  let passMsg = serverCleared
+    ? ('Level cleared (≥50% — ' + pct + '%). Next level unlocked.')
+    : ('Not cleared — need ≥50% overall (you have ' + pct + '%).');
+  const retryNote = ' · Attempts: ' + attemptNum + serverMsg;
+  document.getElementById('levelScoreBanner').innerHTML = `
+    <div class="big-score">${totalEarned} / ${totalMax}</div>
+    <div class="score-label">${pct}% · ${passMsg}${retryNote}${isNewBest ? ' · New best score!' : ''}</div>
+  `;
+
+  let html = '';
+  results.forEach((r, i) => {
+    const pillClass = r.ev.ratio >= 0.75 ? 'full' : (r.ev.ratio >= 0.35 ? 'partial' : 'low');
+    const scoreLabel = `${r.ev.score} / ${r.ev.max} pts`;
+    html += `<div class="q-result">
+      <div class="q-result-header">
+        <strong>Q${i+1}</strong>
+        <span class="score-pill ${pillClass}">${scoreLabel}</span>
+      </div>
+      ${r.ev.matched.length ? `<div class="matched-list">✓ Recognized: ${r.ev.matched.join('; ')}</div>` : ''}
+      ${r.ev.missing.length ? `<div class="missing-list">○ Missing or unclear: ${r.ev.missing.join('; ')}</div>` : ''}
+      <div class="model-answer"><strong>Model answer:</strong> ${r.q.model}</div>
+      ${r.q.note ? `<div class="teaching-note">${r.q.note}</div>` : ''}
+    </div>`;
+  });
+  document.getElementById('feedbackContent').innerHTML = html;
+  document.getElementById('feedbackBox').classList.remove('hidden');
+  document.getElementById('btnSubmit').style.display = 'none';
+  document.getElementById('feedbackBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  toast(serverCleared
+    ? `Cleared ${totalEarned}/${totalMax} — synced to server`
+    : `Scored ${totalEarned}/${totalMax}${serverMsg}`);
+}
+
+function afterScoring() {
+  showScreen('map');
+}
+
+function retryLevel() {
+  openLevel(currentLevelId);
+}
+
+function resetProgress() {
+  if (confirm('Reset all Chapter 1 progress and scores?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    updateHeaderUI();
+    toast('Progress and scores reset');
+    showScreen('title');
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+
+// Prevent copying model answers from feedback
+document.addEventListener('copy', function(e) {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  let node = sel.anchorNode;
+  if (node && node.nodeType === 3) node = node.parentElement;
+  if (node && node.closest && node.closest('.no-copy, .model-answer, .feedback-box')) {
+    e.preventDefault();
+    if (e.clipboardData) e.clipboardData.setData('text/plain', '');
+    toast('Copying feedback is disabled — answer in your own words');
+  }
+});
+document.addEventListener('contextmenu', function(e) {
+  if (e.target.closest && e.target.closest('.no-copy, .model-answer, .feedback-box')) {
+    e.preventDefault();
+  }
+});
+
+// Init
+updateHeaderUI();
+</script>
+</body>
+</html>
